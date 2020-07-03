@@ -297,7 +297,7 @@ class Borrowing extends Component {
             </div>
             <div>
               <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+              <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
             </div>
             <div>
               <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
@@ -333,7 +333,7 @@ class Borrowing extends Component {
             </div>
             <div className={ classes.valContainer }>
               <div className={ classes.balances }>
-                <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.totalLiquidityUSD ? vault.totalLiquidityUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: $ '+ (vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(2) : '0.00') } </Typography>
+                <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.availableBorrowsUSD ? vault.availableBorrowsUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: $ '+ (vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00') } </Typography>
               </div>
               <div>
                 <TextField

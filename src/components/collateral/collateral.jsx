@@ -265,7 +265,7 @@ class Collateral extends Component {
             </div>
             <div>
               <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+              <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
             </div>
             <div>
               <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>

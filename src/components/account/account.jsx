@@ -83,6 +83,14 @@ const styles = theme => ({
   },
   icon: {
     cursor: 'pointer'
+  },
+  disclaimer: {
+    padding: '12px',
+    border: '1px solid '+colors.white,
+    borderRadius: '0.75rem',
+    marginBottom: '24px',
+    fontWeight: 1,
+    color: colors.white
   }
 });
 
@@ -209,6 +217,7 @@ class Account extends Component {
 
     return (
       <div className={ classes.notConnectedRoot }>
+        <Typography variant={'h5'} className={ classes.disclaimer }>This project is in beta. Use at your own risk.</Typography>
         <div className={ classes.connectHeading }>
           <Typography variant='h3'>Connect your wallet to continue</Typography>
         </div>
