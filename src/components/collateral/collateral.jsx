@@ -34,17 +34,29 @@ const store = Store.store
 const styles = theme => ({
   root: {
     padding: '60px',
-    maxWidth: '1200px'
+    width: '1200px'
+  },
+  addressContainer: {
+    background: colors.white,
+    borderRadius: '50px',
+    padding: '30px 42px',
+    border: '1px solid rgba(25, 101, 233, 0.5)',
+    flex: 1,
+    marginBottom: '40px',
+    alignItems: 'center',
+    display: 'flex',
+    justifyContent: 'space-between'
   },
   container: {
     background: colors.white,
     borderRadius: '50px',
-    padding: '42px',
+    padding: '30px 42px',
     flex: 1,
-    marginBottom: '60px'
+    marginBottom: '40px',
+    border: '1px solid rgba(25, 101, 233, 0.5)',
   },
   between: {
-    width: '60px'
+    width: '40px'
   },
   totalsContainer: {
     display: 'flex',
@@ -93,6 +105,24 @@ const styles = theme => ({
   },
   deployVaultContainer: {
 
+  },
+  heading: {
+    paddingBottom: '20px'
+  },
+  online: {
+    border: '7px solid '+colors.green,
+    borderRadius: '7px'
+  },
+  offline: {
+    border: '7px solid '+colors.red,
+    borderRadius: '7px'
+  },
+  walletAddress: {
+    padding: '0px 12px'
+  },
+  walletTitle: {
+    flex: 1,
+    color: colors.darkGray
   }
 });
 
@@ -104,7 +134,8 @@ class Collateral extends Component {
     snackbarMessage: null,
     assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }),
     vaults: store.getStore('vaults'),
-    vault: store.getStore('vault')
+    vault: store.getStore('vault'),
+    account: store.getStore('account')
   };
 
   componentWillMount() {
@@ -194,6 +225,7 @@ class Collateral extends Component {
       loading,
       vaults,
       vault,
+      account,
       snackbarMessage
     } = this.state
 
@@ -202,21 +234,42 @@ class Collateral extends Component {
       vaultAddr = vault.address.substring(0,6)+'...'+vault.address.substring(vault.address.length-4,vault.address.length)
     }
 
+    var address = null;
+    if (account && account.address) {
+      address = account.address.substring(0,6)+'...'+account.address.substring(account.address.length-4,account.address.length)
+    }
+
     return (
       <div className={ classes.root }>
+        <div className={ classes.half }>
+          <div className={ classes.addressContainer }>
+            <Typography variant='h3' className={ classes.walletTitle } >Wallet</Typography>
+            <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
+            { address != null && <div className={ classes.online }></div> }
+            { address == null && <div className={ classes.offline }></div> }
+          </div>
+          <div className={ classes.between }>
+          </div>
+          <div className={ classes.addressContainer }>
+            <Typography variant='h3' className={ classes.walletTitle } >Vault</Typography>
+            <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
+            { vaultAddr != null && <div className={ classes.online }></div> }
+            { vaultAddr == null && <div className={ classes.offline }></div> }
+          </div>
+        </div>
         <div className={ classes.container }>
           <div className={ classes.totalsContainer }>
             <div>
               <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(4) : '0.00' }</Typography>
+              <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
             </div>
             <div>
               <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(4) : '0.00' }</Typography>
+              <Typography variant='h2'>$ { vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
             </div>
             <div>
-              <Typography variant='h3' className={ classes.grey }>Vault Addr</Typography>
-              <Typography variant='h2'>{ vaultAddr ? vaultAddr : 'Not open' }</Typography>
+              <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
+              <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
             </div>
           </div>
         </div>
@@ -242,7 +295,7 @@ class Collateral extends Component {
           (vaults && vaults.length > 0) &&
             <div className={ classes.half }>
               <div className={ classes.container }>
-                <Typography variant='h3' className={ classes.grey }>Deposit Assets</Typography>
+                <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Deposit Assets</Typography>
                 { this.renderDepositAssets() }
                 <Button
                   className={ classes.actionButton }
@@ -258,7 +311,7 @@ class Collateral extends Component {
               <div className={ classes.between }>
               </div>
               <div className={ classes.container }>
-                <Typography variant='h3' className={ classes.grey }>Withdraw Assets</Typography>
+                <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Withdraw Assets</Typography>
                 { this.renderWithdrawAssets() }
                 <Button
                   className={ classes.actionButton }

@@ -126,7 +126,7 @@ const styles = theme => ({
   }
 });
 
-class Borrowing extends Component {
+class Borrower extends Component {
 
   state = {
     loading: (store.getStore('assets') == null || store.getStore('assets').length == 0),
@@ -259,4 +259,4 @@ class Borrowing extends Component {
   }
 }
 
-export default withStyles(styles)(Borrowing);
+export default withStyles(styles)(Borrower);

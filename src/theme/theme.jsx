@@ -28,6 +28,7 @@ export const colors = {
   orange: 'orange',
   darkGray: "rgba(43,57,84,.5)",
   lightBlack: "#6a6a6a",
+  green: '#1abc9c',
 };
 
 const fantomTheme =  {

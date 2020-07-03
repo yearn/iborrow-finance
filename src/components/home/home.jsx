@@ -142,7 +142,7 @@ class Home extends Component {
         </Card>
         <Card className={ `${classes.card} ${classes.apr}` } onClick={ () => { this.props.setHeaderValue(2) } }>
           <BarChartIcon className={ `${classes.icon} icon` } />
-          <Typography variant={'h3'} className={ `${classes.title} title` }>Other</Typography>
+          <Typography variant={'h3'} className={ `${classes.title} title` }>Borrower</Typography>
         </Card>
       </div>
     )

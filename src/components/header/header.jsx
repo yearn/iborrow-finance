@@ -34,6 +34,11 @@ const styles = theme => ({
     '& .title': {
       color: colors.white
     },
+    '& .titleActive': {
+      color: colors.white,
+      borderBottom: '4px solid white',
+      padding: '10px 0px'
+    },
     '& .icon': {
       color: colors.white
     },
@@ -58,6 +63,11 @@ const styles = theme => ({
     },
     '& .title': {
       color: colors.white
+    },
+    '& .titleActive': {
+      color: colors.white,
+      borderBottom: '4px solid white',
+      padding: '10px 0px'
     },
     '& .icon': {
       color: colors.white
@@ -84,14 +94,15 @@ const styles = theme => ({
     '& .title': {
       color: colors.white
     },
+    '& .titleActive': {
+      color: colors.white,
+      borderBottom: '4px solid white',
+      padding: '10px 0px'
+    },
     '& .icon': {
       color: colors.white
     }
   },
-  active: {
-    borderBottom: '4px solid white',
-    padding: '10px 0px'
-  }
 });
 
 function Header(props) {
@@ -110,13 +121,13 @@ function Header(props) {
   return (
     <div className={ classes.root }>
       <div className={ `${classes.earn}` } onClick={ () => { props.setHeaderValue(0) } }>
-        <Typography variant={'h3'} className={ `${classes.title} title` }>Collateral</Typography>
+        <Typography variant={'h3'} className={ value===0?`titleActive`:`title` }>Collateral</Typography>
       </div>
       <div className={ `${classes.zap}` } onClick={ () => { props.setHeaderValue(1) } }>
-        <Typography variant={'h3'} className={ `${classes.title} title` }>Borrowing</Typography>
+        <Typography variant={'h3'} className={ value===1?`titleActive`:`title` }>Borrowing</Typography>
       </div>
       <div className={ `${classes.apr}` } onClick={ () => { props.setHeaderValue(2) } }>
-        <Typography variant={'h3'} className={ (value===2?`${classes.title} title ${classes.active}`:`${classes.title} title`) }>Other</Typography>
+        <Typography variant={'h3'} className={ value===2?`titleActive`:`title` }>Borrower</Typography>
       </div>
     </div>
   )
