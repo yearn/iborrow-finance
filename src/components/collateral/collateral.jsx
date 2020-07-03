@@ -244,7 +244,7 @@ class Collateral extends Component {
         <div className={ classes.half }>
           <div className={ classes.addressContainer }>
             <Typography variant='h3' className={ classes.walletTitle } >Wallet</Typography>
-            <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
+            <Typography variant='h4' className={ classes.walletAddress } >{ address ? address : 'Not connected' }</Typography>
             { address != null && <div className={ classes.online }></div> }
             { address == null && <div className={ classes.offline }></div> }
           </div>
@@ -367,8 +367,6 @@ class Collateral extends Component {
 
     const amount = this.state[asset.id + '_' + type]
     const amountError = this.state[asset.id + '_' + type + '_error']
-
-    console.log(asset)
 
     return (
       <div className={ classes.valContainer }>

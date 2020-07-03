@@ -27,6 +27,11 @@ const styles = theme => ({
       '& .title': {
         color: colors.pink
       },
+      '& .titleActive': {
+        color: colors.pink,
+        borderBottom: '4px solid '+colors.pink,
+        padding: '10px 0px'
+      },
       '& .icon': {
         color: colors.pink
       }
@@ -56,6 +61,11 @@ const styles = theme => ({
       backgroundColor: "#f9fafb",
       '& .title': {
         color: colors.lightBlue,
+      },
+      '& .titleActive': {
+        color: colors.lightBlue,
+        borderBottom: '4px solid '+colors.lightBlue,
+        padding: '10px 0px'
       },
       '& .icon': {
         color: colors.lightBlue
@@ -87,6 +97,11 @@ const styles = theme => ({
       '& .title': {
         color: colors.lightBlack
       },
+      '& .titleActive': {
+        color: colors.lightBlack,
+        borderBottom: '4px solid '+colors.lightBlack,
+        padding: '10px 0px'
+      },
       '& .icon': {
         color: colors.lightBlack
       }
@@ -108,7 +123,8 @@ const styles = theme => ({
 function Header(props) {
   const {
     classes,
-    setHeaderValue
+    setHeaderValue,
+    headerValue
   } = props;
 
   const [value, setValue] = React.useState(0);
@@ -121,13 +137,13 @@ function Header(props) {
   return (
     <div className={ classes.root }>
       <div className={ `${classes.earn}` } onClick={ () => { props.setHeaderValue(0) } }>
-        <Typography variant={'h3'} className={ value===0?`titleActive`:`title` }>Collateral</Typography>
+        <Typography variant={'h3'} className={ headerValue===0?`titleActive`:`title` }>Collateral</Typography>
       </div>
       <div className={ `${classes.zap}` } onClick={ () => { props.setHeaderValue(1) } }>
-        <Typography variant={'h3'} className={ value===1?`titleActive`:`title` }>Borrowing</Typography>
+        <Typography variant={'h3'} className={ headerValue===1?`titleActive`:`title` }>Borrowing</Typography>
       </div>
       <div className={ `${classes.apr}` } onClick={ () => { props.setHeaderValue(2) } }>
-        <Typography variant={'h3'} className={ value===2?`titleActive`:`title` }>Borrower</Typography>
+        <Typography variant={'h3'} className={ headerValue===2?`titleActive`:`title` }>Borrower</Typography>
       </div>
     </div>
   )

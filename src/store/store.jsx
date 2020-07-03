@@ -13,7 +13,17 @@ import {
   DEPLOY_VAULT,
   DEPLOY_VAULT_RETURNED,
   CONFIGURE,
-  CONFIGURE_RETURNED
+  CONFIGURE_RETURNED,
+  GET_BORROWERS,
+  GET_BORROWERS_RETURNED,
+  ADD_BORROWER,
+  ADD_BORROWER_RETURNED,
+  INCREASE_LIMITS,
+  INCREASE_LIMITS_RETURNED,
+  DECREASE_LIMITS,
+  DECREASE_LIMITS_RETURNED,
+  SEARCH_BORROWER,
+  SEARCH_BORROWER_RETURNED,
 } from '../constants'
 
 import Web3 from 'web3';
@@ -34,7 +44,7 @@ class Store {
 
     this.store = {
       account: null,
-      universalGasPrice: '45',
+      universalGasPrice: '55',
       assets: [
         // {
         //   id: 'aDAI',
@@ -93,6 +103,22 @@ class Store {
             break;
           case CONFIGURE:
             this.configure(payload);
+            break;
+          case GET_BORROWERS:
+            this.getBorrowers(payload);
+            break;
+          case ADD_BORROWER:
+            this.addBorrower(payload);
+            break;
+          case INCREASE_LIMITS:
+            this.increaseBorrowerLimits(payload);
+            break;
+          case DECREASE_LIMITS:
+            this.decreaseBorrowerLimits(payload);
+            break;
+          case SEARCH_BORROWER:
+            this.searchBorrower(payload)
+            break;
           default: {
           }
         }
@@ -526,6 +552,183 @@ class Store {
           callback(error)
         }
       })
+  }
+
+  increaseBorrowerLimits = (payload) => {
+    const account = store.getStore('account')
+
+    const { borrower, amount } = payload.content
+
+    this._callIncreaseLimit(account, borrower, amount, (err, data) => {
+      if(err) {
+        return emitter.emit(ERROR, err);
+      }
+
+      return emitter.emit(INCREASE_LIMITS_RETURNED, data)
+    })
+  }
+
+  decreaseBorrowerLimits = (payload) => {
+    const account = store.getStore('account')
+
+    const { borrower, amount } = payload.content
+
+    this._callDecreaseLimit(account, borrower, amount, (err, data) => {
+      if(err) {
+        return emitter.emit(ERROR, err);
+      }
+
+      return emitter.emit(DECREASE_LIMITS_RETURNED, data)
+    })
+  }
+
+  searchBorrower = (payload) => {
+    const account = store.getStore('account')
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    const { borrower } = payload.content
+    this._getSpenderLimit(web3, borrower, account, (err, data) => {
+      if(err) {
+        return emitter.emit(ERROR, err);
+      }
+
+      return emitter.emit(SEARCH_BORROWER_RETURNED, data)
+    })
+  }
+
+  addBorrower = (payload) => {
+    const account = store.getStore('account')
+
+    const { borrower, amount } = payload.content
+
+    this._callIncreaseLimit(account, borrower, amount, (err, data) => {
+      if(err) {
+        return emitter.emit(ERROR, err);
+      }
+
+      return emitter.emit(ADD_BORROWER_RETURNED, data)
+    })
+  }
+
+  _callDecreaseLimit = async (account, borrower, amount, callback) => {
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+
+    const vault = store.getStore('vault').address
+    const amountToSend = web3.utils.toWei(amount, "ether")
+
+    vaultContract.methods.decreaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+      .on('transactionHash', function(hash){
+        console.log(hash)
+        // callback(null, hash)
+      })
+      .on('confirmation', function(confirmationNumber, receipt){
+        console.log(confirmationNumber, receipt);
+        if(confirmationNumber == 2) {
+          callback(null, receipt.transactionHash)
+        }
+      })
+      .on('receipt', function(receipt){
+        console.log(receipt);
+      })
+      .on('error', function(error) {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+      .catch((error) => {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+  }
+
+  _callIncreaseLimit = async (account, borrower, amount, callback) => {
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+
+    const vault = store.getStore('vault').address
+    const amountToSend = web3.utils.toWei(amount, "ether")
+
+    vaultContract.methods.increaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+      .on('transactionHash', function(hash){
+        console.log(hash)
+        // callback(null, hash)
+      })
+      .on('confirmation', function(confirmationNumber, receipt){
+        console.log(confirmationNumber, receipt);
+        if(confirmationNumber == 2) {
+          callback(null, receipt.transactionHash)
+        }
+      })
+      .on('receipt', function(receipt){
+        console.log(receipt);
+      })
+      .on('error', function(error) {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+      .catch((error) => {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+  }
+
+  getBorrowers = () => {
+    const account = store.getStore('account')
+
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    this._getBorrowers(web3, account, (err, borrowers) => {
+      if(err) {
+        return emitter.emit(ERROR, err)
+      }
+
+      async.mapLimit(borrowers, 1, (borrower, callback) => {
+        this._getSpenderLimit(web3, borrower, account, callback)
+      }, (err, borrowersData) => {
+        if(err) {
+          return emitter.emit(ERROR, err)
+        }
+
+        store.setStore({ borrowers: borrowersData })
+        return emitter.emit(GET_BORROWERS_RETURNED, borrowers)
+      })
+
+    })
+  }
+
+  _getBorrowers = async (web3, account, callback) => {
+    callback(null, ['	2d407ddb06311396fe14d4b49da5f0471447d45c'])
+  }
+
+  _getSpenderLimit = async (web3, borrower, account, callback) => {
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+    const vault = store.getStore('vault').address
+
+    try {
+      var limit = await vaultContract.methods.limit(vault, borrower).call({ from: account.address });
+      limit = parseFloat(limit)/10**18
+      callback(null, parseFloat(limit))
+    } catch(ex) {
+      return callback(ex)
+    }
   }
 }
 

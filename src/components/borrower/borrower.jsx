@@ -209,7 +209,7 @@ class Borrower extends Component {
         <div className={ classes.half }>
           <div className={ classes.addressContainer }>
             <Typography variant='h3' className={ classes.walletTitle } >Wallet</Typography>
-            <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
+            <Typography variant='h4' className={ classes.walletAddress } >{ address ? address : 'Not connected' }</Typography>
             { address != null && <div className={ classes.online }></div> }
             { address == null && <div className={ classes.offline }></div> }
           </div>

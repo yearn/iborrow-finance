@@ -80,7 +80,7 @@ class App extends Component {
           }
           { (account && headerValue != null) &&
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-              <Header setHeaderValue={ this.setHeaderValue } />
+              <Header setHeaderValue={ this.setHeaderValue } headerValue={ headerValue } />
               { headerValue === 0 && <Collateral /> }
               { headerValue === 1 && <Borrowing /> }
             </div>

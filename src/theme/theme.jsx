@@ -155,6 +155,35 @@ const fantomTheme =  {
         // border: "none !important"
       }
     },
+    MuiSnackbar : {
+      root: {
+        maxWidth: 'calc(100vw - 24px)'
+      },
+      anchorOriginBottomLeft: {
+        bottom: '12px',
+        left: '12px',
+        '@media (min-width: 960px)': {
+          bottom: '50px',
+          left: '80px'
+        }
+      }
+    },
+    MuiSnackbarContent: {
+      root: {
+        backgroundColor: colors.white,
+        padding: '0px',
+        minWidth: 'auto',
+        '@media (min-width: 960px)': {
+          minWidth: '500px',
+        }
+      },
+      message: {
+        padding: '0px'
+      },
+      action: {
+        marginRight: '0px'
+      }
+    },
   }
 };
 
