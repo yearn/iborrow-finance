@@ -145,8 +145,8 @@ class Borrowing extends Component {
     } = this.state
 
     var vaultAddr = null;
-    if (vault) {
-      vaultAddr = vault.substring(0,6)+'...'+vault.substring(vault.length-4,vault.length)
+    if (vault && vault.address) {
+      vaultAddr = vault.address.substring(0,6)+'...'+vault.address.substring(vault.address.length-4,vault.address.length)
     }
 
     return (
@@ -154,12 +154,12 @@ class Borrowing extends Component {
         <div className={ classes.container }>
           <div className={ classes.totalsContainer }>
             <div>
-              <Typography variant='h3' className={ classes.grey }>Supplied Balance</Typography>
-              <Typography variant='h2'>$0</Typography>
+              <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
+              <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(4) : '0.00' }</Typography>
             </div>
             <div>
-              <Typography variant='h3' className={ classes.grey }>Available Balance</Typography>
-              <Typography variant='h2'>$0</Typography>
+              <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
+              <Typography variant='h2'>$ { vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(4) : '0.00' }</Typography>
             </div>
             <div>
               <Typography variant='h3' className={ classes.grey }>Vault Addr</Typography>

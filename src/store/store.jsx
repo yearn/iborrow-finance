@@ -64,7 +64,7 @@ class Store {
       vaults: [
 
       ],
-      vault: '',
+      vault: null,
       connectorsByName: {
         MetaMask: injected,
         TrustWallet: injected,
@@ -233,7 +233,7 @@ class Store {
         return emitter.emit(ERROR, err)
       }
 
-      store.setStore({ vault: vault })
+      store.setStore({ vault: { address: vault } })
       return emitter.emit(DEPLOY_VAULT_RETURNED, vault)
     })
   }
@@ -276,7 +276,6 @@ class Store {
   }
 
   getVaults = () => {
-    console.log("GETTING VAULTS")
     const account = store.getStore('account')
 
     const web3 = new Web3(store.getStore('web3context').library.provider);
@@ -286,8 +285,17 @@ class Store {
         return emitter.emit(ERROR, err)
       }
 
-      store.setStore({ vaults: vaults, vault: (vaults.length > 0 ? vaults[0] : null) })
-      return emitter.emit(VAULTS_RETURNED, vaults)
+      async.mapLimit(vaults, 1, (vault, callback) => {
+        this._getVaultAccountData(web3, account, vault, callback)
+      }, (err, vaultData) => {
+        if(err) {
+          return emitter.emit(ERROR, err)
+        }
+
+        store.setStore({ vaults: vaultData, vault: (vaultData.length > 0 ? vaultData[0] : null) })
+        return emitter.emit(VAULTS_RETURNED, vaults)
+      })
+
     })
   }
 
@@ -297,6 +305,20 @@ class Store {
     try {
       var vaults = await vaultContract.methods.getVaults(account.address).call({ from: account.address });
       callback(null, vaults)
+    } catch(ex) {
+      console.log(ex)
+      return callback(ex)
+    }
+
+  }
+
+  _getVaultAccountData = async (web3, account, vault, callback) => {
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+
+    try {
+      var vaultData = await vaultContract.methods.getVaultAccountData(vault).call({ from: account.address });
+      vaultData.address = vault
+      callback(null, vaultData)
     } catch(ex) {
       console.log(ex)
       return callback(ex)
@@ -334,6 +356,7 @@ class Store {
             return emitter.emit(ERROR, err);
           }
 
+
           return emitter.emit(DEPOSIT_VAULT_RETURNED, data)
         })
       })
@@ -345,21 +368,24 @@ class Store {
 
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
-    const vault = store.getStore('vault')
+    const vault = store.getStore('vault').address
     const aToken = asset.address
     const amount = asset.amount
+
     var amountToSend = web3.utils.toWei(amount, "ether")
-    if (asset.decimals !== 18) {
-      amountToSend = amount*10**asset.decimals;
+    if (asset.decimals != 18) {
+      amountToSend = (amount*10**asset.decimals).toFixed(0);
     }
 
     vaultContract.methods.deposit(vault, aToken, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
-        callback(null, hash)
       })
       .on('confirmation', function(confirmationNumber, receipt){
         console.log(confirmationNumber, receipt);
+        if(confirmationNumber == 2) {
+          callback(null, receipt.transactionHash)
+        }
       })
       .on('receipt', function(receipt){
         console.log(receipt);
@@ -446,21 +472,24 @@ class Store {
 
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
-    const vault = store.getStore('vault')
+    const vault = store.getStore('vault').address
     const aToken = asset.address
     const amount = asset.amount
     var amountToSend = web3.utils.toWei(amount, "ether")
-    if (asset.decimals !== 18) {
-      amountToSend = amount*10**asset.decimals;
+    if (asset.decimals != 18) {
+      amountToSend = (amount*10**asset.decimals).toFixed(0);
     }
 
     vaultContract.methods.withdraw(vault, aToken, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
-        callback(null, hash)
+        // callback(null, hash)
       })
       .on('confirmation', function(confirmationNumber, receipt){
         console.log(confirmationNumber, receipt);
+        if(confirmationNumber == 2) {
+          callback(null, receipt.transactionHash)
+        }
       })
       .on('receipt', function(receipt){
         console.log(receipt);
