@@ -7,6 +7,7 @@ import theme from './theme';
 import Header from './components/header';
 import Collateral from './components/collateral';
 import Borrowing from './components/borrowing';
+import Borrower from './components/borrower';
 import Account from './components/account';
 import Home from './components/home';
 
@@ -83,6 +84,7 @@ class App extends Component {
               <Header setHeaderValue={ this.setHeaderValue } headerValue={ headerValue } />
               { headerValue === 0 && <Collateral /> }
               { headerValue === 1 && <Borrowing /> }
+              { headerValue === 2 && <Borrower /> }
             </div>
           }
         </div>

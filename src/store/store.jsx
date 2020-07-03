@@ -24,6 +24,8 @@ import {
   DECREASE_LIMITS_RETURNED,
   SEARCH_BORROWER,
   SEARCH_BORROWER_RETURNED,
+  GET_BORROWER_VAULTS,
+  GET_BORROWER_VAULTS_RETURNED
 } from '../constants'
 
 import Web3 from 'web3';
@@ -75,6 +77,9 @@ class Store {
 
       ],
       vault: null,
+      borrowerVaults: [
+
+      ],
       connectorsByName: {
         MetaMask: injected,
         TrustWallet: injected,
@@ -118,6 +123,9 @@ class Store {
             break;
           case SEARCH_BORROWER:
             this.searchBorrower(payload)
+            break;
+          case GET_BORROWER_VAULTS:
+            this.getBorrowerVaults(payload)
             break;
           default: {
           }
@@ -729,6 +737,34 @@ class Store {
     } catch(ex) {
       return callback(ex)
     }
+  }
+
+  getBorrowerVaults = () => {
+    const account = store.getStore('account')
+
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    this._getBorrowerVaults(web3, account, (err, borrowers) => {
+      if(err) {
+        return emitter.emit(ERROR, err)
+      }
+
+      async.mapLimit(borrowers, 1, (borrower, callback) => {
+        this._getSpenderLimit(web3, borrower, account, callback)
+      }, (err, borrowersData) => {
+        if(err) {
+          return emitter.emit(ERROR, err)
+        }
+
+        store.setStore({ borrowers: borrowersData })
+        return emitter.emit(GET_BORROWERS_RETURNED, borrowers)
+      })
+
+    })
+  }
+
+  _getBorrowerVaults = async () => {
+
   }
 }
 

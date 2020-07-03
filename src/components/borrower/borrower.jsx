@@ -10,20 +10,13 @@ import { colors } from '../../theme'
 
 import Loader from '../loader'
 import Snackbar from '../snackbar'
+import Vault from './vault'
 
 import {
   ERROR,
   CONFIGURE_RETURNED,
-  DEPOSIT_VAULT,
-  DEPOSIT_VAULT_RETURNED,
-  WITHDRAW_VAULT,
-  WITHDRAW_VAULT_RETURNED,
-  GET_BALANCES,
-  BALANCES_RETURNED,
-  DEPLOY_VAULT,
-  DEPLOY_VAULT_RETURNED,
-  GET_VAULTS,
-  VAULTS_RETURNED
+  GET_BORROWER_VAULTS,
+  GET_BORROWER_VAULTS_RETURNED
 } from '../../constants'
 
 import Store from "../../store";
@@ -129,31 +122,27 @@ const styles = theme => ({
 class Borrower extends Component {
 
   state = {
-    loading: (store.getStore('assets') == null || store.getStore('assets').length == 0),
+    loading: (store.getStore('borrowerVaults') == null || store.getStore('borrowerVaults').length == 0),
     snackbarType: null,
     snackbarMessage: null,
-    assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }),
-    vaults: store.getStore('vaults'),
-    vault: store.getStore('vault'),
-    account: store.getStore('account')
+    account: store.getStore('account'),
+    borrowerVaults: store.getStore('borrowerVaults')
   };
 
   componentWillMount() {
-    emitter.on(BALANCES_RETURNED, this.balancesReturned);
-    emitter.on(VAULTS_RETURNED, this.vaultsReturned);
+    emitter.on(GET_BORROWER_VAULTS_RETURNED, this.borrowerVaultsReturned);
     emitter.on(CONFIGURE_RETURNED, this.configureReturned);
     emitter.on(ERROR, this.errorReturned);
   };
 
   componentWillUnmount() {
-    emitter.removeListener(BALANCES_RETURNED, this.balancesReturned);
-    emitter.removeListener(VAULTS_RETURNED, this.vaultsReturned);
+    emitter.removeListener(GET_BORROWER_VAULTS_RETURNED, this.borrowerVaultsReturned);
     emitter.removeListener(CONFIGURE_RETURNED, this.configureReturned);
     emitter.removeListener(ERROR, this.errorReturned);
   };
 
   configureReturned = () => {
-    dispatcher.dispatch({ type: GET_VAULTS, content: {} })
+    dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
   }
 
   errorReturned = (error) => {
@@ -167,18 +156,11 @@ class Borrower extends Component {
     })
   };
 
-  balancesReturned = () => {
-    // this.setState({ assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }), loading: false })
-  }
-
-  vaultsReturned = () => {
+  borrowerVaultsReturned = () => {
     this.setState({
       loading: false,
-      vault: store.getStore('vault'),
-      vaults: store.getStore('vaults')
+      borrowerVaults: store.getStore('borrowerVaults')
     })
-
-    dispatcher.dispatch({ type: GET_BALANCES, content: {} })
   }
 
   render() {
@@ -188,16 +170,9 @@ class Borrower extends Component {
 
     const {
       loading,
-      vaults,
-      vault,
       account,
       snackbarMessage
     } = this.state
-
-    var vaultAddr = null;
-    if (vault && vault.address) {
-      vaultAddr = vault.address.substring(0,6)+'...'+vault.address.substring(vault.address.length-4,vault.address.length)
-    }
 
     var address = null;
     if (account && account.address) {
@@ -216,28 +191,12 @@ class Borrower extends Component {
           <div className={ classes.between }>
           </div>
           <div className={ classes.addressContainer }>
-            <Typography variant='h3' className={ classes.walletTitle } >Vault</Typography>
-            <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
-            { vaultAddr != null && <div className={ classes.online }></div> }
-            { vaultAddr == null && <div className={ classes.offline }></div> }
+
           </div>
         </div>
-        <div className={ classes.container }>
-          <div className={ classes.totalsContainer }>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalLiquidityUSD ? (vault.totalLiquidityUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-          </div>
-        </div>
+        {
+          this.renderBorrowerVaults()
+        }
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
       </div>
@@ -252,10 +211,12 @@ class Borrower extends Component {
     return <Snackbar type={ snackbarType } message={ snackbarMessage } open={true}/>
   };
 
-  onChange = (event) => {
-    let val = []
-    val[event.target.id] = event.target.value
-    this.setState(val)
+  renderBorrowerVaults = () => {
+    const borrowerVaults = this.state.borrowerVaults
+
+    return borrowerVaults.map((borrowerVault) => {
+      return <Vault vault={ borrowerVault } />
+    })
   }
 }
 
