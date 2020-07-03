@@ -172,12 +172,8 @@ class Store {
       const symbol = await erc20Contract.methods.symbol().call({ from: account.address });
       const name = await erc20Contract.methods.name().call({ from: account.address });
       const decimals = await erc20Contract.methods.decimals().call({ from: account.address });
-      var balance = await erc20Contract.methods.balanceOf(account.address).call({ from: account.address });
-      balance = parseFloat(balance)/10**decimals
-      balance = parseFloat(balance)
 
       reserveData.id = symbol
-      reserveData.balance = balance
       reserveData.symbol = symbol
       reserveData.decimals = decimals
       reserveData.namea = name
@@ -192,14 +188,17 @@ class Store {
   getBalances = async () => {
     const account = store.getStore('account')
     const assets = store.getStore('assets')
+    const vault = store.getStore('vault')
 
     const web3 = new Web3(store.getStore('web3context').library.provider);
 
     async.map(assets, (asset, callback) => {
       async.parallel([
         (callbackInner) => { this._getERC20Balance(web3, asset, account, callbackInner) },
+        (callbackInner) => { this._getVaultBalance(web3, asset, vault, account, callbackInner) },
       ], (err, data) => {
         asset.balance = data[0]
+        asset.vaultBalance = data[1]
 
         callback(null, asset)
       })
@@ -218,6 +217,24 @@ class Store {
 
     try {
       var balance = await erc20Contract.methods.balanceOf(account.address).call({ from: account.address });
+      balance = parseFloat(balance)/10**asset.decimals
+      callback(null, parseFloat(balance))
+    } catch(ex) {
+      return callback(ex)
+    }
+  }
+
+  _getVaultBalance = async (web3, asset, vault, account, callback) => {
+
+    console.log(vault)
+    if(!vault || !vault.address) {
+      return callback(null, 0)
+    }
+
+    let erc20Contract = new web3.eth.Contract(config.erc20ABI, asset.address)
+
+    try {
+      var balance = await erc20Contract.methods.balanceOf(vault.address).call({ from: account.address });
       balance = parseFloat(balance)/10**asset.decimals
       callback(null, parseFloat(balance))
     } catch(ex) {
@@ -355,7 +372,6 @@ class Store {
           if(err) {
             return emitter.emit(ERROR, err);
           }
-
 
           return emitter.emit(DEPOSIT_VAULT_RETURNED, data)
         })

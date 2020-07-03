@@ -26,7 +26,8 @@ const store = Store.store
 
 const styles = theme => ({
   root: {
-    padding: '60px'
+    padding: '60px',
+    maxWidth: '1200px'
   },
   container: {
     background: colors.white,

@@ -8,6 +8,7 @@ import Header from './components/header';
 import Collateral from './components/collateral';
 import Borrowing from './components/borrowing';
 import Account from './components/account';
+import Home from './components/home';
 
 import {
   CONNECTION_CONNECTED,
@@ -23,7 +24,7 @@ const store = Store.store
 class App extends Component {
   state = {
     account: null,
-    headerValue: 0
+    headerValue: null
   };
 
   setHeaderValue = (newValue) => {
@@ -72,8 +73,13 @@ class App extends Component {
           { !account &&
             <Account setAccount={ this.setAccount } />
           }
-          { account &&
-            <div style={{ flex: 1, maxWidth: '1200px' }}>
+          {
+            (account && headerValue == null) &&
+            <Home setHeaderValue={ this.setHeaderValue } />
+
+          }
+          { (account && headerValue != null) &&
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
               <Header setHeaderValue={ this.setHeaderValue } />
               { headerValue === 0 && <Collateral /> }
               { headerValue === 1 && <Borrowing /> }

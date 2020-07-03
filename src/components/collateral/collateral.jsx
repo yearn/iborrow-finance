@@ -33,7 +33,8 @@ const store = Store.store
 
 const styles = theme => ({
   root: {
-    padding: '60px'
+    padding: '60px',
+    maxWidth: '1200px'
   },
   container: {
     background: colors.white,
@@ -101,7 +102,7 @@ class Collateral extends Component {
     loading: (store.getStore('assets') == null || store.getStore('assets').length == 0),
     snackbarType: null,
     snackbarMessage: null,
-    assets: store.getStore('assets').filter((asset) => { return asset.balance > 0 }),
+    assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }),
     vaults: store.getStore('vaults'),
     vault: store.getStore('vault')
   };
@@ -142,7 +143,7 @@ class Collateral extends Component {
   };
 
   balancesReturned = () => {
-    this.setState({ assets: store.getStore('assets').filter((asset) => { return asset.balance > 0 }), loading: false })
+    this.setState({ assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }), loading: false })
   }
 
   vaultsReturned = () => {
@@ -151,6 +152,8 @@ class Collateral extends Component {
       vault: store.getStore('vault'),
       vaults: store.getStore('vaults')
     })
+
+    dispatcher.dispatch({ type: GET_BALANCES, content: {} })
   }
 
   deployoVaultReturned = (vault) => {
@@ -312,10 +315,13 @@ class Collateral extends Component {
     const amount = this.state[asset.id + '_' + type]
     const amountError = this.state[asset.id + '_' + type + '_error']
 
+    console.log(asset)
+
     return (
       <div className={ classes.valContainer }>
         <div className={ classes.balances }>
-          <Typography variant='h4' onClick={ () => { this.setAmount(asset.id, type, (asset ? asset.balance : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+ ( asset && asset.balance ? (Math.floor(asset.balance*10000)/10000).toFixed(4) : '0.0000') } { asset ? asset.symbol : '' }</Typography>
+          { type === 'deposit' && <Typography variant='h4' onClick={ () => { this.setAmount(asset.id, type, (asset ? asset.balance : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+ ( asset && asset.balance ? (Math.floor(asset.balance*10000)/10000).toFixed(4) : '0.0000') } { asset ? asset.symbol : '' }</Typography> }
+          { type === 'withdraw' && <Typography variant='h4' onClick={ () => { this.setAmount(asset.id, type, (asset ? asset.vaultBalance : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+ ( asset && asset.vaultBalance ? (Math.floor(asset.vaultBalance*10000)/10000).toFixed(4) : '0.0000') } { asset ? asset.symbol : '' }</Typography> }
         </div>
         <div>
           <TextField

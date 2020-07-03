@@ -20,12 +20,14 @@ export const colors = {
   lightGray: "#ecf0f8",
   text: "#212529",
   blue: "#1965e9",
+  lightBlue: "#2F80ED",
   topaz: "#0b8f92",
-  pink: "#ec3297",
+  pink: "#DC6BE5",
   inputBackground: "#f8f9fa",
   red: "#f44336",
   orange: 'orange',
-  darkGray: "rgba(43,57,84,.5)"
+  darkGray: "rgba(43,57,84,.5)",
+  lightBlack: "#6a6a6a",
 };
 
 const fantomTheme =  {
