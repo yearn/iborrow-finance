@@ -1,0 +1,158 @@
+import WorkSansTTF from '../assets/fonts/WorkSans-VariableFont_wght.ttf';
+
+const WorkSans = {
+  fontFamily: 'Work Sans Thin',
+  fontStyle: 'normal',
+  fontDisplay: 'swap',
+  fontWeight: 400,
+  src: `
+    local('Work Sans Thin'),
+    local('Work Sans Thin'),
+    url(${WorkSansTTF}) format('truetype')
+  `,
+  unicodeRange:
+    'U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+2074, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF',
+};
+
+export const colors = {
+  black: "#000000",
+  white: "#FFFFFF",
+  lightGray: "#ecf0f8",
+  text: "#212529",
+  blue: "#1965e9",
+  topaz: "#0b8f92",
+  pink: "#ec3297",
+  inputBackground: "#f8f9fa",
+  red: "#f44336",
+  orange: 'orange',
+  darkGray: "rgba(43,57,84,.5)"
+};
+
+const fantomTheme =  {
+  type: 'light',
+  palette: {
+    primary: {
+      main: colors.blue
+    },
+    secondary: {
+      main: colors.topaz
+    },
+    text: {
+      primary: colors.text,
+      secondary: colors.text
+    }
+  },
+  typography: {
+    fontFamily: [
+      '"Work Sans Thin"',
+      'BlinkMacSystemFont',
+      '"Segoe UI"',
+      'Roboto',
+      '"Helvetica Neue"',
+      'Arial',
+      'sans-serif',
+      '"Apple Color Emoji"',
+      '"Segoe UI Emoji"',
+      '"Segoe UI Symbol"',
+    ].join(','),
+    h1: {
+      fontSize: '48px',
+      fontWeight: '600',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+      lineHeight: 1.2
+    },
+    h2: {
+      fontSize: '36px',
+      fontWeight: '600',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+      lineHeight: 1.2
+    },
+    h3: {
+      fontSize: '24px',
+      fontWeight: '600',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+      lineHeight: 1.2
+    },
+    h4: {
+      fontSize: '16px',
+      fontWeight: '600',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+      lineHeight: 1.2
+    },
+    h5: {
+      fontSize: '14px',
+      fontWeight: '600',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+      lineHeight: 1.2
+    },
+    body1: {
+      fontSize: '16px',
+      fontWeight: '300',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+    },
+    body2: {
+      fontSize: '16px',
+      fontWeight: '300',
+      WebkitFontSmoothing: "antialiased",
+      MozOsxFontSmoothing: "grayscale",
+    },
+  },
+  overrides: {
+    MuiCssBaseline: {
+      '@global': {
+        '@font-face': [WorkSans],
+      },
+    },
+    MuiButton: {
+      root: {
+        borderRadius: '30px',
+        padding: '10px 24px'
+      },
+      outlined: {
+        padding: '10px 24px',
+        borderWidth: '2px !important'
+      },
+      text: {
+        padding: '10px 24px'
+      },
+      label: {
+        textTransform: 'none',
+        fontSize: '1rem'
+      }
+    },
+    MuiInputBase: {
+      input: {
+        fontSize: '16px',
+        fontWeight: '600',
+        WebkitFontSmoothing: "antialiased",
+        MozOsxFontSmoothing: "grayscale",
+        lineHeight: 1.2
+      }
+    },
+    MuiOutlinedInput: {
+      input: {
+        "&::placeholder": {
+          color: colors.text
+        },
+        color: colors.text,
+        padding: '14px',
+        borderRadius: '30px'
+      },
+      root: {
+        // border: "none !important",
+        borderRadius: '30px'
+      },
+      notchedOutline: {
+        // border: "none !important"
+      }
+    },
+  }
+};
+
+export default fantomTheme;
