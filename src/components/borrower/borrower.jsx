@@ -15,8 +15,14 @@ import Vault from './vault'
 import {
   ERROR,
   CONFIGURE_RETURNED,
+  GET_VAULTS,
+  VAULTS_RETURNED,
+  GET_BALANCES,
+  BALANCES_RETURNED,
   GET_BORROWER_VAULTS,
-  GET_BORROWER_VAULTS_RETURNED
+  GET_BORROWER_VAULTS_RETURNED,
+  BORROW_RETURNED,
+  REPAY_RETURNED,
 } from '../../constants'
 
 import Store from "../../store";
@@ -39,6 +45,10 @@ const styles = theme => ({
     alignItems: 'center',
     display: 'flex',
     justifyContent: 'space-between'
+  },
+  invisContainer: {
+    flex: 1,
+    marginBottom: '40px',
   },
   container: {
     background: colors.white,
@@ -126,23 +136,59 @@ class Borrower extends Component {
     snackbarType: null,
     snackbarMessage: null,
     account: store.getStore('account'),
-    borrowerVaults: store.getStore('borrowerVaults')
+    borrowerVaults: store.getStore('borrowerVaults'),
+    assets: store.getStore('assets')
   };
 
   componentWillMount() {
     emitter.on(GET_BORROWER_VAULTS_RETURNED, this.borrowerVaultsReturned);
     emitter.on(CONFIGURE_RETURNED, this.configureReturned);
     emitter.on(ERROR, this.errorReturned);
+    emitter.on(VAULTS_RETURNED, this.vaultsReturned);
+    emitter.on(BALANCES_RETURNED, this.balancesReturned);
+    emitter.on(BORROW_RETURNED, this.borrowReturned);
+    emitter.on(REPAY_RETURNED, this.repayReturned);
   };
 
   componentWillUnmount() {
     emitter.removeListener(GET_BORROWER_VAULTS_RETURNED, this.borrowerVaultsReturned);
     emitter.removeListener(CONFIGURE_RETURNED, this.configureReturned);
     emitter.removeListener(ERROR, this.errorReturned);
+    emitter.removeListener(VAULTS_RETURNED, this.vaultsReturned);
+    emitter.removeListener(BALANCES_RETURNED, this.balancesReturned);
+    emitter.removeListener(BORROW_RETURNED, this.borrowReturned);
+    emitter.removeListener(REPAY_RETURNED, this.repayReturned);
   };
 
-  configureReturned = () => {
+  borrowReturned = (hash) => {
     dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
+    const that = this
+    setTimeout(() => {
+      const snackbarObj = { snackbarMessage: hash, snackbarType: 'Hash' }
+      that.setState(snackbarObj)
+    })
+  }
+
+  repayReturned = (hash) => {
+    dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
+    const that = this
+    setTimeout(() => {
+      const snackbarObj = { snackbarMessage: hash, snackbarType: 'Hash' }
+      that.setState(snackbarObj)
+    })
+  }
+
+  configureReturned = () => {
+    dispatcher.dispatch({ type: GET_VAULTS, content: {} })
+    dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
+  }
+
+  vaultsReturned = () => {
+    dispatcher.dispatch({ type: GET_BALANCES, content: {} })
+  }
+
+  balancesReturned = () => {
+    this.setState({ assets: store.getStore('assets') })
   }
 
   errorReturned = (error) => {
@@ -171,7 +217,8 @@ class Borrower extends Component {
     const {
       loading,
       account,
-      snackbarMessage
+      snackbarMessage,
+      borrowerVaults
     } = this.state
 
     var address = null;
@@ -190,18 +237,43 @@ class Borrower extends Component {
           </div>
           <div className={ classes.between }>
           </div>
-          <div className={ classes.addressContainer }>
+          <div className={ classes.invisContainer }>
 
           </div>
         </div>
         {
-          this.renderBorrowerVaults()
+          (!borrowerVaults) &&
+            <div className={ classes.container }>
+              <div className={ classes.deployVaultContainer }>
+                <Typography variant='h3' className={ classes.grey }>Loading your vaults...</Typography>
+              </div>
+            </div>
+        }
+        {
+          (borrowerVaults && borrowerVaults.length === 0) &&
+            <div className={ classes.container }>
+              <div className={ classes.deployVaultContainer }>
+                <Typography variant='h3' className={ classes.grey }>You have no vaults to borrow from</Typography>
+              </div>
+            </div>
+        }
+        {
+          (borrowerVaults && borrowerVaults.length > 0) &&
+            this.renderBorrowerVaults()
         }
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
       </div>
     )
   };
+
+  startLoading = () => {
+    this.setState({ loading: true })
+  }
+
+  stopLoading = () => {
+    this.setState({ loading: false })
+  }
 
   renderSnackbar = () => {
     var {
@@ -212,10 +284,10 @@ class Borrower extends Component {
   };
 
   renderBorrowerVaults = () => {
-    const borrowerVaults = this.state.borrowerVaults
+    const { borrowerVaults, assets } = this.state
 
     return borrowerVaults.map((borrowerVault) => {
-      return <Vault vault={ borrowerVault } />
+      return <Vault vault={ borrowerVault } assets={ assets } startLoading={ this.startLoading } stopLoading={ this.stopLoading } />
     })
   }
 }

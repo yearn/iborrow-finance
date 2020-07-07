@@ -23,7 +23,8 @@ import {
   DEPLOY_VAULT,
   DEPLOY_VAULT_RETURNED,
   GET_VAULTS,
-  VAULTS_RETURNED
+  VAULTS_RETURNED,
+  GET_BORROWER_VAULTS,
 } from '../../constants'
 
 import Store from "../../store";
@@ -160,6 +161,7 @@ class Collateral extends Component {
 
   configureReturned = () => {
     dispatcher.dispatch({ type: GET_VAULTS, content: {} })
+    dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
   }
 
   errorReturned = (error) => {
@@ -257,24 +259,16 @@ class Collateral extends Component {
             { vaultAddr == null && <div className={ classes.offline }></div> }
           </div>
         </div>
-        <div className={ classes.container }>
-          <div className={ classes.totalsContainer }>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-              <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-          </div>
-        </div>
         {
-          (!vaults || vaults.length === 0) &&
+          (!vaults) &&
+            <div className={ classes.container }>
+              <div className={ classes.deployVaultContainer }>
+                <Typography variant='h3' className={ classes.grey }>Loading your vaults...</Typography>
+              </div>
+            </div>
+        }
+        {
+          (vaults && vaults.length === 0) &&
             <div className={ classes.container }>
               <div className={ classes.deployVaultContainer }>
                 <Typography variant='h3' className={ classes.grey }>You first need to create a vault to start providing collateral.</Typography>
@@ -284,12 +278,30 @@ class Collateral extends Component {
                   color="primary"
                   disabled={ loading }
                   onClick={ this.onDeployVault }
-
                   >
                   <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Create Vault</Typography>
                 </Button>
               </div>
             </div>
+        }
+        {
+          (vaults && vaults.length > 0) &&
+          <div className={ classes.container }>
+            <div className={ classes.totalsContainer }>
+              <div>
+                <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
+                <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+              </div>
+              <div>
+                <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
+                <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+              </div>
+              <div>
+                <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
+                <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+              </div>
+            </div>
+          </div>
         }
         {
           (vaults && vaults.length > 0) &&
@@ -391,7 +403,7 @@ class Collateral extends Component {
                 <div className={ classes.assetIcon }>
                   <img
                     alt=""
-                    src={ require('../../assets/aave-logo.png') }
+                    src={ require('../../assets/'+asset.id+'-logo.png') }
                     height="30px"
                   />
                 </div>

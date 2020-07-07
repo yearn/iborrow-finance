@@ -25,7 +25,8 @@ import {
   INCREASE_LIMITS,
   INCREASE_LIMITS_RETURNED,
   DECREASE_LIMITS,
-  DECREASE_LIMITS_RETURNED
+  DECREASE_LIMITS_RETURNED,
+  GET_BORROWER_VAULTS
 } from '../../constants'
 
 import Store from "../../store";
@@ -216,6 +217,7 @@ class Borrowing extends Component {
 
   configureReturned = () => {
     dispatcher.dispatch({ type: GET_VAULTS, content: {} })
+    dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
   }
 
   errorReturned = (error) => {
@@ -289,153 +291,167 @@ class Borrowing extends Component {
             { vaultAddr == null && <div className={ classes.offline }></div> }
           </div>
         </div>
-        <div className={ classes.container }>
-          <div className={ classes.totalsContainer }>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-              <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-            <div>
-              <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
-              <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
-            </div>
-          </div>
-        </div>
-        <div className={ classes.container }>
-          <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Add a borrower</Typography>
-          <div className={ classes.amountContainer }>
-            <div className={ classes.valContainer }>
-              <div className={ classes.amountTitle }>
-                <Typography variant='h4'>Borrower</Typography>
-              </div>
-              <div>
-                <TextField
-                  fullWidth
-                  disabled={ loading }
-                  className={ classes.actionInput }
-                  id={ 'borrower' }
-                  value={ borrower }
-                  error={ borrowerError }
-                  onChange={ this.onChange }
-                  placeholder="0x....."
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: <InputAdornment position="end" className={ classes.emptyInputAdornment }></InputAdornment>,
-                  }}
-                />
+        {
+          (!vaults) &&
+            <div className={ classes.container }>
+              <div className={ classes.deployVaultContainer }>
+                <Typography variant='h3' className={ classes.grey }>Loading your vaults...</Typography>
               </div>
             </div>
-            <div className={ classes.between }>
-            </div>
-            <div className={ classes.valContainer }>
-              <div className={ classes.balances }>
-                <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.availableBorrowsUSD ? vault.availableBorrowsUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: $ '+ (vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00') } </Typography>
-              </div>
-              <div>
-                <TextField
-                  fullWidth
-                  disabled={ loading }
-                  className={ classes.actionInput }
-                  id={ 'amount' }
-                  value={ amount }
-                  error={ amountError }
-                  onChange={ this.onChange }
-                  placeholder="0.00"
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
-                  }}
-                />
+        }
+        { (vaults && vaults.length > 0) &&
+            <div className={ classes.container }>
+              <div className={ classes.totalsContainer }>
+                <div>
+                  <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
+                  <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+                </div>
+                <div>
+                  <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
+                  <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+                </div>
+                <div>
+                  <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
+                  <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+                </div>
               </div>
             </div>
-          </div>
-          <Button
-            className={ classes.actionButton }
-            variant="outlined"
-            color="primary"
-            disabled={ loading }
-            onClick={ this.onAddBorrower }
-            fullWidth
-            >
-            <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Add borrower</Typography>
-          </Button>
-        </div>
-        <div className={ classes.container }>
-          <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Manage borrower limits</Typography>
-          <div className={ classes.amountContainer }>
-            <TextField
-              fullWidth
-              disabled={ loading }
-              className={ classes.actionInput }
-              id={ 'searchBorrower' }
-              value={ searchBorrower }
-              error={ searchBorrowerError }
-              onChange={ this.onChange }
-              placeholder="0x....."
-              variant="outlined"
-              onKeyDown= { this.onSearchKeyDown }
-              InputProps={{
-                startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><SearchIcon /></InputAdornment>,
-              }}
-            />
-            <div className={ classes.between }>
+        }
+        { (vaults && vaults.length > 0) &&
+          <div className={ classes.container }>
+            <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Add a borrower</Typography>
+            <div className={ classes.amountContainer }>
+              <div className={ classes.valContainer }>
+                <div className={ classes.amountTitle }>
+                  <Typography variant='h4'>Borrower</Typography>
+                </div>
+                <div>
+                  <TextField
+                    fullWidth
+                    disabled={ loading }
+                    className={ classes.actionInput }
+                    id={ 'borrower' }
+                    value={ borrower }
+                    error={ borrowerError }
+                    onChange={ this.onChange }
+                    placeholder="0x....."
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: <InputAdornment position="end" className={ classes.emptyInputAdornment }></InputAdornment>,
+                    }}
+                  />
+                </div>
+              </div>
+              <div className={ classes.between }>
+              </div>
+              <div className={ classes.valContainer }>
+                <div className={ classes.balances }>
+                  <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.availableBorrowsUSD ? vault.availableBorrowsUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: $ '+ (vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00') } </Typography>
+                </div>
+                <div>
+                  <TextField
+                    fullWidth
+                    disabled={ loading }
+                    className={ classes.actionInput }
+                    id={ 'amount' }
+                    value={ amount }
+                    error={ amountError }
+                    onChange={ this.onChange }
+                    placeholder="0.00"
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
+                    }}
+                  />
+                </div>
+              </div>
             </div>
             <Button
-              className={ classes.searchButton }
+              className={ classes.actionButton }
               variant="outlined"
               color="primary"
               disabled={ loading }
-              onClick={ this.onSearch }
+              onClick={ this.onAddBorrower }
+              fullWidth
               >
-              <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Search</Typography>
+              <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Add borrower</Typography>
             </Button>
           </div>
-          { foundBorrower && (
-            <div className={ classes.borrower }>
-              <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Search Result</Typography>
-              <div className={ classes.borrowerInfo }>
-                <Typography variant={ 'h4' } className={ classes.borrowerTitle }>Address</Typography>
-                <Typography variant={ 'h4' } className={ classes.borrowerValue }>{ foundBorrower ? foundBorrower.address : 'N/A' }</Typography>
+        }
+        { (vaults && vaults.length > 0) &&
+          <div className={ classes.container }>
+            <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Manage borrower limits</Typography>
+            <div className={ classes.amountContainer }>
+              <TextField
+                fullWidth
+                disabled={ loading }
+                className={ classes.actionInput }
+                id={ 'searchBorrower' }
+                value={ searchBorrower }
+                error={ searchBorrowerError }
+                onChange={ this.onChange }
+                placeholder="0x....."
+                variant="outlined"
+                onKeyDown= { this.onSearchKeyDown }
+                InputProps={{
+                  startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><SearchIcon /></InputAdornment>,
+                }}
+              />
+              <div className={ classes.between }>
               </div>
-              <div className={ classes.borrowerInfo }>
-                <Typography variant={ 'h4' } className={ classes.borrowerTitle }>Current Limit</Typography>
-                <Typography variant={ 'h4' } className={ classes.borrowerValue }>$ { (foundBorrower ? foundBorrower.limit : 0).toFixed(2) }</Typography>
-              </div>
-              <div className={ classes.borrowerInfo }>
-                <TextField
-                  fullWidth
-                  disabled={ loading }
-                  className={ classes.actionInput }
-                  id={ 'manageAmount' }
-                  value={ manageAmount }
-                  error={ manageAmountError }
-                  onChange={ this.onChange }
-                  placeholder={ foundBorrower.limit }
-                  variant="outlined"
-                  InputProps={{
-                    startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
-                  }}
-                />
-                <div className={ classes.between }>
-                </div>
-                <Button
-                  className={ classes.searchButton }
-                  variant="outlined"
-                  color="primary"
-                  disabled={ loading }
-                  onClick={ this.onManageLimit }
-                  fullWidth
-                  >
-                  <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Set new limit</Typography>
-                </Button>
-              </div>
+              <Button
+                className={ classes.searchButton }
+                variant="outlined"
+                color="primary"
+                disabled={ loading }
+                onClick={ this.onSearch }
+                >
+                <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Search</Typography>
+              </Button>
             </div>
-          ) }
-        </div>
+            { foundBorrower && (
+              <div className={ classes.borrower }>
+                <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Search Result</Typography>
+                <div className={ classes.borrowerInfo }>
+                  <Typography variant={ 'h4' } className={ classes.borrowerTitle }>Address</Typography>
+                  <Typography variant={ 'h4' } className={ classes.borrowerValue }>{ foundBorrower ? foundBorrower.address : 'N/A' }</Typography>
+                </div>
+                <div className={ classes.borrowerInfo }>
+                  <Typography variant={ 'h4' } className={ classes.borrowerTitle }>Current Limit</Typography>
+                  <Typography variant={ 'h4' } className={ classes.borrowerValue }>$ { (foundBorrower ? foundBorrower.limit : 0).toFixed(2) }</Typography>
+                </div>
+                <div className={ classes.borrowerInfo }>
+                  <TextField
+                    fullWidth
+                    disabled={ loading }
+                    className={ classes.actionInput }
+                    id={ 'manageAmount' }
+                    value={ manageAmount }
+                    error={ manageAmountError }
+                    onChange={ this.onChange }
+                    placeholder={ foundBorrower.limit }
+                    variant="outlined"
+                    InputProps={{
+                      startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
+                    }}
+                  />
+                  <div className={ classes.between }>
+                  </div>
+                  <Button
+                    className={ classes.searchButton }
+                    variant="outlined"
+                    color="primary"
+                    disabled={ loading }
+                    onClick={ this.onManageLimit }
+                    fullWidth
+                    >
+                    <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Set new limit</Typography>
+                  </Button>
+                </div>
+              </div>
+            ) }
+          </div>
+        }
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
       </div>

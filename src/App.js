@@ -14,7 +14,12 @@ import Home from './components/home';
 import {
   CONNECTION_CONNECTED,
   CONNECTION_DISCONNECTED,
-  CONFIGURE
+  CONFIGURE,
+  CONFIGURE_RETURNED,
+  GET_VAULTS,
+  VAULTS_RETURNED,
+  GET_BALANCES,
+  GET_BORROWER_VAULTS,
 } from './constants'
 
 import Store from "./store";
@@ -39,12 +44,25 @@ class App extends Component {
   componentWillMount() {
     emitter.on(CONNECTION_CONNECTED, this.connectionConnected);
     emitter.on(CONNECTION_DISCONNECTED, this.connectionDisconnected);
+    emitter.on(CONFIGURE_RETURNED, this.configureReturned);
+    emitter.on(VAULTS_RETURNED, this.vaultsReturned);
   }
 
   componentWillUnmount() {
     emitter.removeListener(CONNECTION_CONNECTED, this.connectionConnected);
     emitter.removeListener(CONNECTION_DISCONNECTED, this.connectionDisconnected);
+    emitter.removeListener(CONFIGURE_RETURNED, this.configureReturned);
+    emitter.removeListener(VAULTS_RETURNED, this.vaultsReturned);
   };
+
+  configureReturned = () => {
+    dispatcher.dispatch({ type: GET_VAULTS, content: {} })
+    dispatcher.dispatch({ type: GET_BORROWER_VAULTS, content: {} })
+  }
+
+  vaultsReturned = () => {
+    dispatcher.dispatch({ type: GET_BALANCES, content: {} })
+  }
 
   connectionConnected = () => {
     this.setState({ account: store.getStore('account') })

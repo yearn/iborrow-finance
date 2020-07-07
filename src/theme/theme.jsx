@@ -112,6 +112,16 @@ const fantomTheme =  {
         '@font-face': [WorkSans],
       },
     },
+    MuiSelect: {
+      select: {
+        padding: '9px'
+      },
+      selectMenu: {
+        minHeight: '30px',
+        display: 'flex',
+        alignItems: 'center'
+      }
+    },
     MuiButton: {
       root: {
         borderRadius: '30px',
