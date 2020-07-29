@@ -204,7 +204,7 @@ class Vault extends Component {
     return (<div className={ classes.root }>
       <div className={ classes.container }>
         <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>{ vault.address }</Typography>
-        <Typography variant='h4' className={ `${classes.heading}` }>Current borrowing limit: $ { vault.limit }</Typography>
+        <Typography variant='h4' className={ `${classes.heading}` }>Current borrowing limit: { vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault.limit } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
         <div className={ classes.half }>
           <div className={ classes.inputSection }>
             <div className={ classes.valContainer }>
@@ -228,7 +228,8 @@ class Vault extends Component {
                 placeholder="0.00"
                 variant="outlined"
                 InputProps={{
-                  startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
+                  startAdornment: (vault.borrowSymbol === '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
+                  endAdornment: (vault.borrowSymbol !== '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
                 }}
               />
             </div>
@@ -267,7 +268,8 @@ class Vault extends Component {
                   placeholder="0.00"
                   variant="outlined"
                   InputProps={{
-                    startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
+                    startAdornment: (vault.borrowSymbol === '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
+                    endAdornment: (vault.borrowSymbol !== '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
                   }}
                 />
             </div>
@@ -289,7 +291,7 @@ class Vault extends Component {
 
   renderAssetSelect = (id) => {
     const { loading } = this.state
-    const { classes, assets } = this.props
+    const { classes, assets, vault } = this.props
 
     return (
       <TextField
@@ -306,7 +308,14 @@ class Vault extends Component {
         disabled={ loading }
         className={ classes.assetSelectRoot }
       >
-        { assets ? assets.map(this.renderAssetOption) : null }
+        { assets ? assets.filter((asset) => {
+          if( vault.borrowAsset !== '0x0000000000000000000000000000000000000000' ) {
+            return asset.reserve === vault.borrowAsset
+          } else {
+            return true
+          }
+
+        }).map(this.renderAssetOption) : null }
       </TextField>
     )
   }
@@ -314,13 +323,21 @@ class Vault extends Component {
   renderAssetOption = (option) => {
     const { classes } = this.props
 
+
+    let assetImage = ''
+    try {
+      assetImage = require('../../assets/'+option.id+'-logo.png')
+    } catch (e) {
+      assetImage = require('../../assets/aave-logo.png')
+    }
+
     return (
       <MenuItem key={option.id} value={option.reserve_symbol} className={ classes.assetSelectMenu }>
         <React.Fragment>
           <div className={ classes.assetSelectIcon }>
             <img
               alt=""
-              src={ require('../../assets/'+option.id+'-logo.png') }
+              src={ assetImage }
               height="30px"
             />
           </div>

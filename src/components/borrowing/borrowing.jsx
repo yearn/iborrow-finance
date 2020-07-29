@@ -4,7 +4,8 @@ import {
   Typography,
   TextField,
   InputAdornment,
-  Button
+  Button,
+  MenuItem
 } from '@material-ui/core'
 import { colors } from '../../theme'
 import SearchIcon from '@material-ui/icons/Search';
@@ -26,7 +27,10 @@ import {
   INCREASE_LIMITS_RETURNED,
   DECREASE_LIMITS,
   DECREASE_LIMITS_RETURNED,
-  GET_BORROWER_VAULTS
+  GET_BORROWER_VAULTS,
+  BALANCES_RETURNED,
+  SET_BORROW_ASSET,
+  SET_BORROW_ASSET_RETURNED
 } from '../../constants'
 
 import Store from "../../store";
@@ -155,7 +159,31 @@ const styles = theme => ({
   },
   borrowerValue: {
     flex: '1'
-  }
+  },
+  assetSelectMenu: {
+    padding: '15px 15px 15px 20px',
+    minWidth: '200px',
+    display: 'flex'
+  },
+  assetSelectIcon: {
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    borderRadius: '25px',
+    background: '#dedede',
+    height: '30px',
+    width: '30px',
+    textAlign: 'center',
+    cursor: 'pointer'
+  },
+  assetSelectIconName: {
+    paddingLeft: '10px',
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    flex: 1
+  },
+  assetSelectBalance: {
+
+  },
 });
 
 class Borrowing extends Component {
@@ -168,6 +196,7 @@ class Borrowing extends Component {
     vault: store.getStore('vault'),
     account: store.getStore('account'),
     foundBorrower: null,
+    assets: store.getStore('assets')
   };
 
   componentWillMount() {
@@ -177,6 +206,7 @@ class Borrowing extends Component {
     emitter.on(SEARCH_BORROWER_RETURNED, this.searchReturned);
     emitter.on(INCREASE_LIMITS_RETURNED, this.increaseLimitsReturned);
     emitter.on(DECREASE_LIMITS_RETURNED, this.increaseLimitsReturned);
+    emitter.on(BALANCES_RETURNED, this.balancesReturned);
     emitter.on(ERROR, this.errorReturned);
   };
 
@@ -187,8 +217,13 @@ class Borrowing extends Component {
     emitter.removeListener(SEARCH_BORROWER_RETURNED, this.searchReturned);
     emitter.removeListener(INCREASE_LIMITS_RETURNED, this.increaseLimitsReturned);
     emitter.removeListener(DECREASE_LIMITS_RETURNED, this.increaseLimitsReturned);
+    emitter.removeListener(BALANCES_RETURNED, this.balancesReturned);
     emitter.removeListener(ERROR, this.errorReturned);
   };
+
+  balancesReturned = () => {
+    this.setState({ assets: store.getStore('assets') })
+  }
 
   increaseLimitsReturned = (txHash) => {
     dispatcher.dispatch({ type: SEARCH_BORROWER, content: { borrower: this.state.foundBorrower.address } })
@@ -304,15 +339,15 @@ class Borrowing extends Component {
               <div className={ classes.totalsContainer }>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
-                  <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
                 </div>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-                  <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
                 </div>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
-                  <Typography variant='h2'>$ { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
+                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
                 </div>
               </div>
             </div>
@@ -346,7 +381,7 @@ class Borrowing extends Component {
               </div>
               <div className={ classes.valContainer }>
                 <div className={ classes.balances }>
-                  <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.availableBorrowsUSD ? vault.availableBorrowsUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: $ '+ (vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00') } </Typography>
+                  <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.availableBorrowsUSD ? vault.availableBorrowsUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+(vault.borrowSymbol === '$' ? vault.borrowSymbol : '')+ (vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00')+(vault.borrowSymbol !== '$' ? vault.borrowSymbol : '') } </Typography>
                 </div>
                 <div>
                   <TextField
@@ -360,7 +395,8 @@ class Borrowing extends Component {
                     placeholder="0.00"
                     variant="outlined"
                     InputProps={{
-                      startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
+                      startAdornment: (vault.borrowSymbol === '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
+                      endAdornment: (vault.borrowSymbol !== '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
                     }}
                   />
                 </div>
@@ -418,7 +454,7 @@ class Borrowing extends Component {
                 </div>
                 <div className={ classes.borrowerInfo }>
                   <Typography variant={ 'h4' } className={ classes.borrowerTitle }>Current Limit</Typography>
-                  <Typography variant={ 'h4' } className={ classes.borrowerValue }>$ { (foundBorrower ? foundBorrower.limit : 0).toFixed(2) }</Typography>
+                  <Typography variant={ 'h4' } className={ classes.borrowerValue }>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { (foundBorrower ? foundBorrower.limit : 0).toFixed(2) } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
                 </div>
                 <div className={ classes.borrowerInfo }>
                   <TextField
@@ -432,7 +468,8 @@ class Borrowing extends Component {
                     placeholder={ foundBorrower.limit }
                     variant="outlined"
                     InputProps={{
-                      startAdornment: <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>$</Typography></InputAdornment>,
+                      startAdornment: (vault.borrowSymbol === '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
+                      endAdornment: (vault.borrowSymbol !== '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
                     }}
                   />
                   <div className={ classes.between }>
@@ -450,6 +487,25 @@ class Borrowing extends Component {
                 </div>
               </div>
             ) }
+          </div>
+        }
+        { (vaults && vaults.length > 0) &&
+          <div className={ classes.container }>
+            <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Set borrower asset</Typography>
+            <div className={ classes.amountContainer }>
+              { this.renderAssetSelect('borrowerAsset') }
+              <div className={ classes.between }>
+              </div>
+              <Button
+                className={ classes.searchButton }
+                variant="outlined"
+                color="primary"
+                disabled={ loading }
+                onClick={ this.onSetBorrow }
+                >
+                <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Submit</Typography>
+              </Button>
+            </div>
           </div>
         }
         { loading && <Loader /> }
@@ -501,6 +557,35 @@ class Borrowing extends Component {
     if(!error) {
       this.setState({ loading: true })
       dispatcher.dispatch({ type: ADD_BORROWER, content: { borrower: borrower, amount: amount } })
+    }
+  }
+
+  onSetBorrow = () => {
+    this.setState({ borrowerAssetError: false })
+    const {
+      borrowerAsset,
+      assets
+    } = this.state
+
+    let error = false
+
+    if(!borrowerAsset || borrowerAsset === "") {
+      this.setState({ borrowerAssetError: 'Invalid' })
+      error = true
+    }
+
+    let borrowReserve = assets.filter((asset) => { return asset.reserve_symbol === borrowerAsset })
+
+    if(borrowReserve.length < 1) {
+      this.setState({ borrowError: true })
+      return false
+    } else {
+      borrowReserve = borrowReserve[0]
+    }
+
+    if(!error) {
+      this.setState({ loading: true })
+      dispatcher.dispatch({ type: SET_BORROW_ASSET, content: { borrowerAsset: borrowReserve } })
     }
   }
 
@@ -562,6 +647,67 @@ class Borrowing extends Component {
         dispatcher.dispatch({ type: DECREASE_LIMITS, content: { borrower: foundBorrower.address, amount: adjustLimit } })
       }
     }
+  }
+
+  renderAssetSelect = (id) => {
+    const { loading, assets } = this.state
+    const { classes } = this.props
+
+    return (
+      <TextField
+        id={ id }
+        name={ id }
+        select
+        value={ this.state[id] }
+        onChange={ this.onSelectChange }
+        SelectProps={{
+          native: false,
+        }}
+        variant="outlined"
+        fullWidth
+        disabled={ loading }
+        className={ classes.assetSelectRoot }
+      >
+        { assets ? assets.map(this.renderAssetOption) : null }
+      </TextField>
+    )
+  }
+
+  renderAssetOption = (option) => {
+    const { classes } = this.props
+
+    let assetImage = ''
+    try {
+      assetImage = require('../../assets/'+option.id+'-logo.png')
+    } catch (e) {
+      assetImage = require('../../assets/aave-logo.png')
+    }
+
+    return (
+      <MenuItem key={option.id} value={option.reserve_symbol} className={ classes.assetSelectMenu }>
+        <React.Fragment>
+          <div className={ classes.assetSelectIcon }>
+            <img
+              alt=""
+              src={ assetImage }
+              height="30px"
+            />
+          </div>
+          <div className={ classes.assetSelectIconName }>
+            <Typography variant='h4'>{ option.reserve_symbol }</Typography>
+          </div>
+          <div className={ classes.assetSelectBalance }>
+            <Typography variant='h4' className={ classes.grey }>{ option.reserve_balance ? option.reserve_balance.toFixed(4) : '0.0000' } { option.reserve_symbol }</Typography>
+          </div>
+        </React.Fragment>
+      </MenuItem>
+    )
+  }
+
+  onSelectChange = (event) => {
+    let val = []
+    val[event.target.name] = event.target.value
+    this.setState(val)
   }
 }
 

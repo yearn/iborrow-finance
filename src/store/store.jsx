@@ -29,7 +29,9 @@ import {
   BORROW,
   BORROW_RETURNED,
   REPAY,
-  REPAY_RETURNED
+  REPAY_RETURNED,
+  SET_BORROW_ASSET,
+  SET_BORROW_ASSET_RETURNED
 } from '../constants'
 
 import Web3 from 'web3';
@@ -39,6 +41,7 @@ import {
   ledger
 } from "./connectors";
 
+const rp = require('request-promise');
 const Dispatcher = require('flux').Dispatcher;
 const Emitter = require('events').EventEmitter;
 
@@ -107,6 +110,9 @@ class Store {
             break;
           case REPAY:
             this.repay(payload)
+            break;
+          case SET_BORROW_ASSET:
+            this.setBorrowAsset(payload)
             break;
           default: {
           }
@@ -309,7 +315,7 @@ class Store {
 
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
-    vaultContract.methods.deployVault().send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.deployVault().send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -351,7 +357,7 @@ class Store {
         return emitter.emit(ERROR, err)
       }
 
-      async.mapLimit(vaults, 1, (vault, callback) => {
+      async.mapLimit(vaults, 2, (vault, callback) => {
         this._getVaultAccountData(web3, account, vault, callback)
       }, (err, vaultData) => {
         if(err) {
@@ -384,6 +390,23 @@ class Store {
     try {
       var vaultData = await vaultContract.methods.getVaultAccountData(vault).call({ from: account.address });
       vaultData.address = vault
+      const borrowAsset = await vaultContract.methods.getBorrow(vault).call({ from: account.address });
+      vaultData.borrowAsset = borrowAsset
+
+      // vaultData.borrowAsset = '0x0000000000000000000000000000000000000000'
+
+      if(vaultData.borrowAsset !== '0x0000000000000000000000000000000000000000') {
+        const erc20Contract = new web3.eth.Contract(config.erc20ABI, vaultData.borrowAsset)
+        const symbol = await erc20Contract.methods.symbol().call({ from: account.address });
+        const decimals = await erc20Contract.methods.decimals().call({ from: account.address });
+
+        vaultData.borrowSymbol = symbol
+        vaultData.borrowDecimals = decimals
+      } else {
+        vaultData.borrowSymbol = '$'
+        vaultData.borrowDecimals = '18'
+      }
+
       callback(null, vaultData)
     } catch(ex) {
       console.log(ex)
@@ -442,7 +465,7 @@ class Store {
       amountToSend = (amount*10**asset.decimals).toFixed(0);
     }
 
-    vaultContract.methods.deposit(vault, aToken, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.deposit(vault, aToken, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
       })
@@ -492,10 +515,10 @@ class Store {
     let erc20Contract = new web3.eth.Contract(config.erc20ABI, asset.address)
     try {
       if(last) {
-        let res = await erc20Contract.methods.approve(contract, web3.utils.toWei("999999999999999", "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+        let res = await erc20Contract.methods.approve(contract, web3.utils.toWei("999999999999999", "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
         callback()
       } else {
-        erc20Contract.methods.approve(contract, web3.utils.toWei("999999999999999", "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+        erc20Contract.methods.approve(contract, web3.utils.toWei("999999999999999", "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
           .on('transactionHash', function(hash){
             callback()
           })
@@ -544,7 +567,7 @@ class Store {
       amountToSend = (amount*10**asset.decimals).toFixed(0);
     }
 
-    vaultContract.methods.withdraw(vault, aToken, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.withdraw(vault, aToken, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -633,6 +656,58 @@ class Store {
     })
   }
 
+  setBorrowAsset = (payload) => {
+    const account = store.getStore('account')
+
+    const { borrowerAsset } = payload.content
+
+    this._callSetBorrow(account, borrowerAsset, (err, data) => {
+      if(err) {
+        return emitter.emit(ERROR, err);
+      }
+
+      return emitter.emit(SET_BORROW_ASSET_RETURNED, data)
+    })
+  }
+
+  _callSetBorrow = async (account, borrowerAsset, callback) => {
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+
+    const vault = store.getStore('vault').address
+
+    vaultContract.methods.setBorrow(vault, borrowerAsset.reserve).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
+      .on('transactionHash', function(hash){
+        console.log(hash)
+        // callback(null, hash)
+      })
+      .on('confirmation', function(confirmationNumber, receipt){
+        if(confirmationNumber == 2) {
+          callback(null, receipt.transactionHash)
+        }
+      })
+      .on('receipt', function(receipt){
+        console.log(receipt);
+      })
+      .on('error', function(error) {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+      .catch((error) => {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+  }
+
   _callDecreaseLimit = async (account, borrower, amount, callback) => {
     const web3 = new Web3(store.getStore('web3context').library.provider);
 
@@ -641,7 +716,7 @@ class Store {
     const vault = store.getStore('vault').address
     const amountToSend = web3.utils.toWei(amount, "ether")
 
-    vaultContract.methods.decreaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.decreaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -681,7 +756,7 @@ class Store {
     const vault = store.getStore('vault').address
     const amountToSend = web3.utils.toWei(amount, "ether")
 
-    vaultContract.methods.increaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.increaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -724,7 +799,7 @@ class Store {
         return emitter.emit(ERROR, err)
       }
 
-      async.mapLimit(borrowers, 1, (borrower, callback) => {
+      async.mapLimit(borrowers, 2, (borrower, callback) => {
         this._getSpenderLimit(web3, borrower, account, vault, callback)
       }, (err, borrowersData) => {
         if(err) {
@@ -754,6 +829,34 @@ class Store {
     }
   }
 
+  _getBorrow = async (web3, account, vault, callback) => {
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+
+    try {
+      var borrowAsset = await vaultContract.methods.getBorrow(vault).call({ from: account.address });
+
+      let returnObj = {
+        borrowAsset: borrowAsset
+      }
+
+      if(borrowAsset !== '0x0000000000000000000000000000000000000000') {
+        const erc20Contract = new web3.eth.Contract(config.erc20ABI, borrowAsset)
+        const symbol = await erc20Contract.methods.symbol().call({ from: account.address });
+        const decimals = await erc20Contract.methods.decimals().call({ from: account.address });
+
+        returnObj.borrowSymbol = symbol
+        returnObj.borrowDecimals = decimals
+      } else {
+        returnObj.borrowSymbol = '$'
+        returnObj.borrowDecimals = '18'
+      }
+
+      callback(null, returnObj)
+    } catch(ex) {
+      return callback(ex)
+    }
+  }
+
   getBorrowerVaults = () => {
     const account = store.getStore('account')
 
@@ -766,11 +869,16 @@ class Store {
 
       async.mapLimit(borrowerVaults, 1, (vault, callback) => {
         this._getSpenderLimit(web3, account.address, account, vault, (err, limit) => {
-          const newVault = {
-            address: vault,
-            limit: limit
-          }
-          callback(null, newVault)
+          this._getBorrow(web3, account, vault, (err, borrowAssetInfo) => {
+            const newVault = {
+              address: vault,
+              limit: limit,
+              borrowAsset: borrowAssetInfo.borrowAsset,
+              borrowSymbol: borrowAssetInfo.borrowSymbol,
+              borrowDecimals: borrowAssetInfo.borrowDecimals
+            }
+            callback(null, newVault)
+          })
         })
       }, (err, borrowerVaultsData) => {
         if(err) {
@@ -819,7 +927,7 @@ class Store {
       amountToSend = (amount*10**asset.decimals).toFixed(0);
     }
 
-    vaultContract.methods.borrow(vault.address, asset.reserve, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.borrow(vault.address, asset.reserve, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -880,7 +988,7 @@ class Store {
       amountToSend = (amount*10**asset.decimals).toFixed(0);
     }
 
-    vaultContract.methods.repay(vault.address, asset.reserve, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+    vaultContract.methods.repay(vault.address, asset.reserve, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -920,7 +1028,7 @@ class Store {
       const ethAllowance = web3.utils.fromWei(allowance, "ether")
 
       if(parseFloat(ethAllowance) < parseFloat(amount)) {
-        await erc20Contract.methods.approve(contract, web3.utils.toWei(amount, "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(store.getStore('universalGasPrice'), 'gwei') })
+        await erc20Contract.methods.approve(contract, web3.utils.toWei(amount, "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
         callback()
       } else {
         callback()
@@ -931,6 +1039,21 @@ class Store {
         return callback(error.message)
       }
       callback(error)
+    }
+  }
+
+  _getGasPrice = async () => {
+    try {
+      const url = 'https://gasprice.poa.network/'
+      const priceString = await rp(url);
+      const priceJSON = JSON.parse(priceString)
+      if(priceJSON) {
+        return priceJSON.fast.toFixed(0)
+      }
+      return store.getStore('universalGasPrice')
+    } catch(e) {
+      console.log(e)
+      return store.getStore('universalGasPrice')
     }
   }
 }
