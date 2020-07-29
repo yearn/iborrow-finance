@@ -339,11 +339,11 @@ class Borrowing extends Component {
               <div className={ classes.totalsContainer }>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Collateral</Typography>
-                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+                  <Typography variant='h2'>$ { vault && vault.totalCollateralUSD ? (vault.totalCollateralUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
                 </div>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Liquidity</Typography>
-                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+                  <Typography variant='h2'>$ { vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00' }</Typography>
                 </div>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
