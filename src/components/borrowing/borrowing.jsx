@@ -308,6 +308,24 @@ class Borrowing extends Component {
       address = account.address.substring(0,6)+'...'+account.address.substring(account.address.length-4,account.address.length)
     }
 
+    let totalBorrowsUSD = '0.00'
+    if(vault && vault.totalBorrowsUSD) {
+      if(vault.reservePriceUSD) {
+        totalBorrowsUSD = (vault.totalBorrowsUSD/(10**26) / vault.reservePriceUSD).toFixed(2)
+      } else {
+        totalBorrowsUSD = (vault.totalBorrowsUSD/(10**26)).toFixed(2)
+      }
+    }
+
+    let availableBorrowsUSD = '0.00'
+    if(vault && vault.availableBorrowsUSD) {
+      if(vault.reservePriceUSD) {
+        availableBorrowsUSD = (vault.availableBorrowsUSD/(10**26) / vault.reservePriceUSD).toFixed(2)
+      } else {
+        availableBorrowsUSD = (vault.availableBorrowsUSD/(10**26)).toFixed(2)
+      }
+    }
+
     return (
       <div className={ classes.root }>
         <div className={ classes.half }>
@@ -347,7 +365,7 @@ class Borrowing extends Component {
                 </div>
                 <div>
                   <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
-                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+                  <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { totalBorrowsUSD } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
                 </div>
               </div>
             </div>
@@ -381,7 +399,7 @@ class Borrowing extends Component {
               </div>
               <div className={ classes.valContainer }>
                 <div className={ classes.balances }>
-                  <Typography variant='h4' onClick={ () => { this.setAmount('amount', (vault && vault.availableBorrowsUSD ? vault.availableBorrowsUSD/(10**26) : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+(vault.borrowSymbol === '$' ? vault.borrowSymbol : '')+ (vault && vault.availableBorrowsUSD ? (vault.availableBorrowsUSD/(10**26)).toFixed(2) : '0.00')+(vault.borrowSymbol !== '$' ? vault.borrowSymbol : '') } </Typography>
+                  <Typography variant='h4' onClick={ () => { this.setAmount('amount', availableBorrowsUSD) } } className={ classes.value } noWrap>{ 'Balance: ' + (vault.borrowSymbol === '$' ? vault.borrowSymbol : '') + availableBorrowsUSD + (vault.borrowSymbol !== '$' ? vault.borrowSymbol : '') } </Typography>
                 </div>
                 <div>
                   <TextField
@@ -454,7 +472,7 @@ class Borrowing extends Component {
                 </div>
                 <div className={ classes.borrowerInfo }>
                   <Typography variant={ 'h4' } className={ classes.borrowerTitle }>Current Limit</Typography>
-                  <Typography variant={ 'h4' } className={ classes.borrowerValue }>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { (foundBorrower ? foundBorrower.limit : 0).toFixed(2) } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+                  <Typography variant={ 'h4' } className={ classes.borrowerValue }>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { foundBorrower.limit.toFixed(2) } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
                 </div>
                 <div className={ classes.borrowerInfo }>
                   <TextField

@@ -204,7 +204,7 @@ class Vault extends Component {
     return (<div className={ classes.root }>
       <div className={ classes.container }>
         <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>{ vault.address }</Typography>
-        <Typography variant='h4' className={ `${classes.heading}` }>Current borrowing limit: { vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault.limit } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+        <Typography variant='h4' className={ `${classes.heading}` }>Current borrowing limit: { vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault.limit.toFixed(2) } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
         <div className={ classes.half }>
           <div className={ classes.inputSection }>
             <div className={ classes.valContainer }>

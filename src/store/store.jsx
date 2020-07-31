@@ -399,9 +399,11 @@ class Store {
         const erc20Contract = new web3.eth.Contract(config.erc20ABI, vaultData.borrowAsset)
         const symbol = await erc20Contract.methods.symbol().call({ from: account.address });
         const decimals = await erc20Contract.methods.decimals().call({ from: account.address });
+        const reservePriceUSD = await vaultContract.methods.getReservePriceUSD(borrowAsset).call({ from: account.address })
 
         vaultData.borrowSymbol = symbol
         vaultData.borrowDecimals = decimals
+        vaultData.reservePriceUSD = reservePriceUSD
       } else {
         vaultData.borrowSymbol = '$'
         vaultData.borrowDecimals = '18'
@@ -843,9 +845,11 @@ class Store {
         const erc20Contract = new web3.eth.Contract(config.erc20ABI, borrowAsset)
         const symbol = await erc20Contract.methods.symbol().call({ from: account.address });
         const decimals = await erc20Contract.methods.decimals().call({ from: account.address });
+        const reservePriceUSD = await vaultContract.methods.getReservePriceUSD(borrowAsset).call({ from: account.address })
 
         returnObj.borrowSymbol = symbol
         returnObj.borrowDecimals = decimals
+        returnObj.reservePriceUSD = reservePriceUSD
       } else {
         returnObj.borrowSymbol = '$'
         returnObj.borrowDecimals = '18'
@@ -875,7 +879,8 @@ class Store {
               limit: limit,
               borrowAsset: borrowAssetInfo.borrowAsset,
               borrowSymbol: borrowAssetInfo.borrowSymbol,
-              borrowDecimals: borrowAssetInfo.borrowDecimals
+              borrowDecimals: borrowAssetInfo.borrowDecimals,
+              reservePriceUSD: borrowAssetInfo.reservePriceUSD
             }
             callback(null, newVault)
           })

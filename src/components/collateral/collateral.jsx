@@ -241,6 +241,15 @@ class Collateral extends Component {
       address = account.address.substring(0,6)+'...'+account.address.substring(account.address.length-4,account.address.length)
     }
 
+    let totalBorrowsUSD = '0.00'
+    if(vault && vault.totalBorrowsUSD) {
+      if(vault.reservePriceUSD) {
+        totalBorrowsUSD = (vault.totalBorrowsUSD/(10**26) / vault.reservePriceUSD).toFixed(2)
+      } else {
+        totalBorrowsUSD = (vault.totalBorrowsUSD/(10**26)).toFixed(2)
+      }
+    }
+
     return (
       <div className={ classes.root }>
         <div className={ classes.half }>
@@ -298,7 +307,7 @@ class Collateral extends Component {
               </div>
               <div>
                 <Typography variant='h3' className={ classes.grey }>Total Borrowed</Typography>
-                <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault && vault.totalBorrowsUSD ? (vault.totalBorrowsUSD/(10**26)).toFixed(2) : '0.00' } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+                <Typography variant='h2'>{ vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { totalBorrowsUSD } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
               </div>
             </div>
           </div>
@@ -381,7 +390,7 @@ class Collateral extends Component {
     const amountError = this.state[asset.id + '_' + type + '_error']
 
     return (
-      <div className={ classes.valContainer }>
+      <div className={ classes.valContainer } key={asset.id + '_' + type}>
         <div className={ classes.balances }>
           { type === 'deposit' && <Typography variant='h4' onClick={ () => { this.setAmount(asset.id, type, (asset ? asset.balance : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+ ( asset && asset.balance ? (Math.floor(asset.balance*10000)/10000).toFixed(4) : '0.0000') } { asset ? asset.symbol : '' }</Typography> }
           { type === 'withdraw' && <Typography variant='h4' onClick={ () => { this.setAmount(asset.id, type, (asset ? asset.vaultBalance : 0)) } } className={ classes.value } noWrap>{ 'Balance: '+ ( asset && asset.vaultBalance ? (Math.floor(asset.vaultBalance*10000)/10000).toFixed(4) : '0.0000') } { asset ? asset.symbol : '' }</Typography> }
