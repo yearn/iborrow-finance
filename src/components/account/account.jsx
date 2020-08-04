@@ -15,10 +15,8 @@ import {
   BALANCES_RETURNED,
   GET_VAULTS,
   VAULTS_RETURNED,
-  CONNECTION_CONNECTED,
   CONNECTION_DISCONNECTED,
   CONFIGURE,
-  CONFIGURE_RETURNED
 } from '../../constants'
 
 import Store from "../../store";
@@ -106,58 +104,36 @@ class Account extends Component {
       assets: store.getStore('assets'),
       modalOpen: false,
     }
-
-    // if(account && account.address) {
-    //   dispatcher.dispatch({ type: GET_BALANCES, content: {} })
-    //   dispatcher.dispatch({ type: GET_VAULTS, content: {} })
-    // }
   }
   componentWillMount() {
     emitter.on(ERROR, this.errorReturned);
     emitter.on(BALANCES_RETURNED, this.balancesReturned);
     emitter.on(VAULTS_RETURNED, this.vaultsReturned);
-    emitter.on(CONNECTION_CONNECTED, this.connectionConnected);
     emitter.on(CONNECTION_DISCONNECTED, this.connectionDisconnected);
-    emitter.on(CONFIGURE_RETURNED, this.configureReturned);
   }
 
   componentWillUnmount() {
     emitter.removeListener(ERROR, this.errorReturned);
     emitter.removeListener(BALANCES_RETURNED, this.balancesReturned);
     emitter.removeListener(VAULTS_RETURNED, this.vaultsReturned);
-    emitter.removeListener(CONNECTION_CONNECTED, this.connectionConnected);
     emitter.removeListener(CONNECTION_DISCONNECTED, this.connectionDisconnected);
-    emitter.removeListener(CONFIGURE_RETURNED, this.configureReturned);
   };
 
   refresh = () => {
-    // dispatcher.dispatch({ type: GET_BALANCES, content: {} })
-    // dispatcher.dispatch({ type: GET_VAULTS, content: {} })
   }
 
   vaultsReturned = () => {
-    //not sure
   };
 
   balancesReturned = (balances) => {
     this.setState({ assets: store.getStore('assets') })
   };
 
-  connectionConnected = () => {
-    // this.setState({ account: store.getStore('account') })
-  };
-
-  configureReturned = () => {
-    // dispatcher.dispatch({ type: GET_BALANCES, content: {} })
-    // dispatcher.dispatch({ type: GET_VAULTS, content: {} })
-  }
-
   connectionDisconnected = () => {
     this.setState({ account: store.getStore('account') })
   }
 
   errorReturned = (error) => {
-    //TODO: handle errors
   };
 
   render() {

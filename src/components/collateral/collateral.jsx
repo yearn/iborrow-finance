@@ -4,7 +4,8 @@ import {
   Typography,
   TextField,
   InputAdornment,
-  Button
+  Button,
+  MenuItem
 } from '@material-ui/core'
 import { colors } from '../../theme'
 
@@ -99,6 +100,7 @@ const styles = theme => ({
   valContainer: {
     display: 'flex',
     flexDirection: 'column',
+    flex: 1
   },
   actionButton: {
     marginTop: '20px',
@@ -124,7 +126,43 @@ const styles = theme => ({
   walletTitle: {
     flex: 1,
     color: colors.darkGray
-  }
+  },
+  assetSelectMenu: {
+    padding: '15px 15px 15px 20px',
+    minWidth: '200px',
+    display: 'flex'
+  },
+  assetSelectIcon: {
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    borderRadius: '25px',
+    background: '#dedede',
+    height: '30px',
+    width: '30px',
+    textAlign: 'center',
+    cursor: 'pointer'
+  },
+  assetSelectIconName: {
+    paddingLeft: '10px',
+    display: 'inline-block',
+    verticalAlign: 'middle',
+    flex: 1
+  },
+  assetSelectBalance: {
+
+  },
+  amountContainer: {
+    paddingTop: '24px',
+    display: 'flex',
+    alignItems: 'flex-end'
+  },
+  searchButton: {
+    height: '47px',
+    minWidth: '200px'
+  },
+  amountTitle: {
+    paddingLeft: '20px',
+  },
 });
 
 class Collateral extends Component {
@@ -134,9 +172,11 @@ class Collateral extends Component {
     snackbarType: null,
     snackbarMessage: null,
     assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }),
+    vaultCreateAssets: store.getStore('assets'),
     vaults: store.getStore('vaults'),
     vault: store.getStore('vault'),
-    account: store.getStore('account')
+    account: store.getStore('account'),
+    borrowerAsset: '$'
   };
 
   componentWillMount() {
@@ -176,7 +216,11 @@ class Collateral extends Component {
   };
 
   balancesReturned = () => {
-    this.setState({ assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }), loading: false })
+    this.setState({
+      assets: store.getStore('assets').filter((asset) => { return (asset.balance > 0 || asset.vaultBalance > 0) }),
+      vaultCreateAssets: store.getStore('assets'),
+      loading: false
+    })
   }
 
   vaultsReturned = () => {
@@ -281,15 +325,25 @@ class Collateral extends Component {
             <div className={ classes.container }>
               <div className={ classes.deployVaultContainer }>
                 <Typography variant='h3' className={ classes.grey }>You first need to create a vault to start providing collateral.</Typography>
-                <Button
-                  className={ classes.actionButton }
-                  variant="outlined"
-                  color="primary"
-                  disabled={ loading }
-                  onClick={ this.onDeployVault }
-                  >
-                  <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Create Vault</Typography>
-                </Button>
+                <div className={ classes.amountContainer }>
+                  <div className={ classes.valContainer }>
+                    <div className={ classes.amountTitle }>
+                      <Typography variant='h4'>Vault Asset</Typography>
+                    </div>
+                    { this.renderAssetSelect('borrowerAsset') }
+                  </div>
+                  <div className={ classes.between }>
+                  </div>
+                  <Button
+                    className={ classes.searchButton }
+                    variant="outlined"
+                    color="primary"
+                    disabled={ loading }
+                    onClick={ this.onDeployVault }
+                    >
+                    <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Create Vault</Typography>
+                  </Button>
+                </div>
               </div>
             </div>
         }
@@ -438,8 +492,22 @@ class Collateral extends Component {
   }
 
   onDeployVault = () => {
+    this.setState({ borrowerAssetError: false })
+    const {
+      borrowerAsset,
+      vaultCreateAssets
+    } = this.state
+
+    let borrowReserve = vaultCreateAssets.filter((asset) => { return asset.reserve_symbol === borrowerAsset })
+
+    if(borrowReserve.length < 1) {
+      borrowReserve = { id: '$', name: 'Dollar', reserve: '0x0000000000000000000000000000000000000000', symbol: '$', reserve_symbol: '$' }
+    } else {
+      borrowReserve = borrowReserve[0]
+    }
+
     this.setState({ loading: true })
-    dispatcher.dispatch({ type: DEPLOY_VAULT, content: {  } })
+    dispatcher.dispatch({ type: DEPLOY_VAULT, content: { borrowerAsset: borrowReserve } })
   }
 
   onDeposit = () => {
@@ -476,6 +544,67 @@ class Collateral extends Component {
 
     this.setState({ loading: true })
     dispatcher.dispatch({ type: WITHDRAW_VAULT, content: { assets: sendAssets } })
+  }
+
+  renderAssetSelect = (id) => {
+    const { loading, vaultCreateAssets } = this.state
+    const { classes } = this.props
+
+    const newFirstElement = { id: '$', name: 'Dollar', reserve: '0x0000000000000000000000000000000000000000', symbol: '$', reserve_symbol: '$' }
+    const newArray = [newFirstElement].concat(vaultCreateAssets)
+
+    return (
+      <TextField
+        id={ id }
+        name={ id }
+        select
+        value={ this.state[id] }
+        onChange={ this.onSelectChange }
+        SelectProps={{
+          native: false,
+        }}
+        variant="outlined"
+        fullWidth
+        disabled={ loading }
+        className={ classes.assetSelectRoot }
+      >
+        { newArray ? newArray.map(this.renderAssetOption) : null }
+      </TextField>
+    )
+  }
+
+  renderAssetOption = (option) => {
+    const { classes } = this.props
+
+    let assetImage = ''
+    try {
+      assetImage = require('../../assets/'+option.id+'-logo.png')
+    } catch (e) {
+      assetImage = require('../../assets/aave-logo.png')
+    }
+
+    return (
+      <MenuItem key={option.id} value={option.reserve_symbol} className={ classes.assetSelectMenu }>
+        <React.Fragment>
+          <div className={ classes.assetSelectIcon }>
+            <img
+              alt=""
+              src={ assetImage }
+              height="30px"
+            />
+          </div>
+          <div className={ classes.assetSelectIconName }>
+            <Typography variant='h4'>{ option.reserve_symbol }</Typography>
+          </div>
+        </React.Fragment>
+      </MenuItem>
+    )
+  }
+
+  onSelectChange = (event) => {
+    let val = []
+    val[event.target.name] = event.target.value
+    this.setState(val)
   }
 }
 

@@ -297,10 +297,12 @@ class Store {
     }
   }
 
-  deployVault = () => {
+  deployVault = (payload) => {
     const account = store.getStore('account')
 
-    this._callDeployVault(account, (err, vault) => {
+    const { borrowerAsset } = payload.content
+
+    this._callDeployVault(account, borrowerAsset, (err, vault) => {
       if(err) {
         return emitter.emit(ERROR, err)
       }
@@ -310,12 +312,14 @@ class Store {
     })
   }
 
-  _callDeployVault = async (account, callback) => {
+  _callDeployVault = async (account, borrowerAsset, callback) => {
     const web3 = new Web3(store.getStore('web3context').library.provider);
 
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
-    vaultContract.methods.deployVault().send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
+    console.log(borrowerAsset.reserve)
+
+    vaultContract.methods.deployVault(borrowerAsset.reserve).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)

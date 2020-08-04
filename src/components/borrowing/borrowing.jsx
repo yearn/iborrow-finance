@@ -507,7 +507,7 @@ class Borrowing extends Component {
             ) }
           </div>
         }
-        { (vaults && vaults.length > 0) &&
+        {/* (vaults && vaults.length > 0) &&
           <div className={ classes.container }>
             <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Set borrower asset</Typography>
             <div className={ classes.amountContainer }>
@@ -525,7 +525,7 @@ class Borrowing extends Component {
               </Button>
             </div>
           </div>
-        }
+        */}
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
       </div>
