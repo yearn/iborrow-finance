@@ -207,6 +207,7 @@ class Collateral extends Component {
 
   vaultChanged = () => {
     this.setState({ vault: store.getStore('vault') })
+    dispatcher.dispatch({ type: GET_BALANCES, content: {} })
   }
 
   configureReturned = () => {

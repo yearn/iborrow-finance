@@ -248,6 +248,7 @@ class Borrowing extends Component {
 
   vaultChanged = () => {
     this.setState({ vault: store.getStore('vault') })
+    dispatcher.dispatch({ type: GET_BALANCES, content: {} })
   }
 
   balancesReturned = () => {
