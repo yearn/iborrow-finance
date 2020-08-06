@@ -1031,11 +1031,16 @@ class Store {
 
       let ethAllowance = web3.utils.fromWei(allowance, "ether")
       if (asset.decimals != 18) {
-        ethAllowance = (amount*10**asset.decimals).toFixed(0);
+        ethAllowance = (allowance*10**asset.decimals).toFixed(0);
+      }
+
+      var amountToSend = web3.utils.toWei('999999999', "ether")
+      if (asset.decimals != 18) {
+        amountToSend = (999999999*10**asset.decimals).toFixed(0);
       }
 
       if(parseFloat(ethAllowance) < parseFloat(amount)) {
-        await erc20Contract.methods.approve(contract, web3.utils.toWei(amount, "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
+        await erc20Contract.methods.approve(contract, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
         callback()
       } else {
         callback()
