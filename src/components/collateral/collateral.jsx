@@ -11,6 +11,7 @@ import { colors } from '../../theme'
 
 import Loader from '../loader'
 import Snackbar from '../snackbar'
+import VaultsModal from '../vaults/vaultsModal.jsx'
 
 import {
   ERROR,
@@ -26,6 +27,7 @@ import {
   GET_VAULTS,
   VAULTS_RETURNED,
   GET_BORROWER_VAULTS,
+  VAULT_CHANGED
 } from '../../constants'
 
 import Store from "../../store";
@@ -47,7 +49,8 @@ const styles = theme => ({
     marginBottom: '40px',
     alignItems: 'center',
     display: 'flex',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    cursor: 'pointer'
   },
   container: {
     background: colors.white,
@@ -176,7 +179,8 @@ class Collateral extends Component {
     vaults: store.getStore('vaults'),
     vault: store.getStore('vault'),
     account: store.getStore('account'),
-    borrowerAsset: '$'
+    borrowerAsset: '$',
+    vaultsOpen: false
   };
 
   componentWillMount() {
@@ -187,6 +191,7 @@ class Collateral extends Component {
     emitter.on(VAULTS_RETURNED, this.vaultsReturned);
     emitter.on(CONFIGURE_RETURNED, this.configureReturned);
     emitter.on(ERROR, this.errorReturned);
+    emitter.on(VAULT_CHANGED, this.vaultChanged);
   };
 
   componentWillUnmount() {
@@ -197,7 +202,12 @@ class Collateral extends Component {
     emitter.removeListener(VAULTS_RETURNED, this.vaultsReturned);
     emitter.removeListener(CONFIGURE_RETURNED, this.configureReturned);
     emitter.removeListener(ERROR, this.errorReturned);
+    emitter.removeListener(VAULT_CHANGED, this.vaultChanged);
   };
+
+  vaultChanged = () => {
+    this.setState({ vault: store.getStore('vault') })
+  }
 
   configureReturned = () => {
     dispatcher.dispatch({ type: GET_VAULTS, content: {} })
@@ -272,7 +282,8 @@ class Collateral extends Component {
       vaults,
       vault,
       account,
-      snackbarMessage
+      snackbarMessage,
+      vaultsOpen
     } = this.state
 
     var vaultAddr = null;
@@ -305,7 +316,7 @@ class Collateral extends Component {
           </div>
           <div className={ classes.between }>
           </div>
-          <div className={ classes.addressContainer }>
+          <div className={ classes.addressContainer } onClick={ this.vaultClicked }>
             <Typography variant='h3' className={ classes.walletTitle } >Vault</Typography>
             <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
             { vaultAddr != null && <div className={ classes.online }></div> }
@@ -403,9 +414,18 @@ class Collateral extends Component {
         }
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
+        { vaultsOpen && <VaultsModal modalOpen={true} closeModal={ this.closeVaults } /> }
       </div>
     )
   };
+
+  vaultClicked = () => {
+    this.setState({ vaultsOpen: true })
+  }
+
+  closeVaults = () => [
+    this.setState({ vaultsOpen: false })
+  ]
 
   renderSnackbar = () => {
     var {

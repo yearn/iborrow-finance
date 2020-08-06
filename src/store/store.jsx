@@ -14,8 +14,6 @@ import {
   DEPLOY_VAULT_RETURNED,
   CONFIGURE,
   CONFIGURE_RETURNED,
-  GET_BORROWERS,
-  GET_BORROWERS_RETURNED,
   ADD_BORROWER,
   ADD_BORROWER_RETURNED,
   INCREASE_LIMITS,
@@ -86,9 +84,6 @@ class Store {
             break;
           case CONFIGURE:
             this.configure(payload);
-            break;
-          case GET_BORROWERS:
-            this.getBorrowers(payload);
             break;
           case ADD_BORROWER:
             this.addBorrower(payload);
@@ -199,17 +194,13 @@ class Store {
 
       if(reserveData.reserve.toLowerCase() !== '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'.toLowerCase()) {
         const reserveErc20Contract = new web3.eth.Contract(config.erc20ABI, reserveData.reserve)
-        // const reserveSymbol = await reserveErc20Contract.methods.symbol().call({ from: account.address });
-        // const reserveName = await reserveErc20Contract.methods.name().call({ from: account.address });
         const reserveDecimals = await reserveErc20Contract.methods.decimals().call({ from: account.address });
 
         reserveData.reserve_symbol = symbol.substring(1)
         reserveData.reserve_decimals = reserveDecimals
-        // reserveData.reserve_name = reserveName
       } else {
         reserveData.reserve_symbol = 'ETH'
         reserveData.reserve_decimals = 18
-        reserveData.reserve_name = 'Ether'
       }
       callback(null, reserveData)
     } catch(ex) {
@@ -396,8 +387,6 @@ class Store {
       vaultData.address = vault
       const borrowAsset = await vaultContract.methods.getBorrow(vault).call({ from: account.address });
       vaultData.borrowAsset = borrowAsset
-
-      // vaultData.borrowAsset = '0x0000000000000000000000000000000000000000'
 
       if(vaultData.borrowAsset !== '0x0000000000000000000000000000000000000000') {
         const erc20Contract = new web3.eth.Contract(config.erc20ABI, vaultData.borrowAsset)
@@ -636,7 +625,7 @@ class Store {
   searchBorrower = (payload) => {
     const account = store.getStore('account')
     const web3 = new Web3(store.getStore('web3context').library.provider);
-    const vault = store.getStore('vault').address
+    const vault = store.getStore('vault')
 
     const { borrower } = payload.content
     this._getSpenderLimit(web3, borrower, account, vault, (err, data) => {
@@ -719,10 +708,14 @@ class Store {
 
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
-    const vault = store.getStore('vault').address
-    const amountToSend = web3.utils.toWei(amount, "ether")
+    const vault = store.getStore('vault')
 
-    vaultContract.methods.decreaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
+    var amountToSend = web3.utils.toWei(amount, "ether")
+    if (vault.borrowDecimals != 18) {
+      amountToSend = (amount*10**vault.borrowDecimals).toFixed(0);
+    }
+
+    vaultContract.methods.decreaseLimit(vault.address, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -759,10 +752,14 @@ class Store {
 
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
-    const vault = store.getStore('vault').address
-    const amountToSend = web3.utils.toWei(amount, "ether")
+    const vault = store.getStore('vault')
 
-    vaultContract.methods.increaseLimit(vault, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
+    var amountToSend = web3.utils.toWei(amount, "ether")
+    if (vault.borrowDecimals != 18) {
+      amountToSend = (amount*10**vault.borrowDecimals).toFixed(0);
+    }
+
+    vaultContract.methods.increaseLimit(vault.address, borrower, amountToSend).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
       .on('transactionHash', function(hash){
         console.log(hash)
         // callback(null, hash)
@@ -794,41 +791,12 @@ class Store {
       })
   }
 
-  getBorrowers = () => {
-    const account = store.getStore('account')
-    const vault = store.getStore('vault').address
-
-    const web3 = new Web3(store.getStore('web3context').library.provider);
-
-    this._getBorrowers(web3, account, (err, borrowers) => {
-      if(err) {
-        return emitter.emit(ERROR, err)
-      }
-
-      async.mapLimit(borrowers, 2, (borrower, callback) => {
-        this._getSpenderLimit(web3, borrower, account, vault, callback)
-      }, (err, borrowersData) => {
-        if(err) {
-          return emitter.emit(ERROR, err)
-        }
-
-        store.setStore({ borrowers: borrowersData })
-        return emitter.emit(GET_BORROWERS_RETURNED, borrowers)
-      })
-
-    })
-  }
-
-  _getBorrowers = async (web3, account, callback) => {
-    callback(null, ['	2d407ddb06311396fe14d4b49da5f0471447d45c'])
-  }
-
   _getSpenderLimit = async (web3, borrower, account, vault, callback) => {
     const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
 
     try {
-      var limit = await vaultContract.methods.limit(vault, borrower).call({ from: account.address });
-      limit = parseFloat(limit)/10**18
+      var limit = await vaultContract.methods.limit(vault.address, borrower).call({ from: account.address });
+      limit = parseFloat(limit)/10**(vault.borrowDecimals ? vault.borrowDecimals : 18)
       callback(null, parseFloat(limit))
     } catch(ex) {
       return callback(ex)
@@ -876,8 +844,12 @@ class Store {
       }
 
       async.mapLimit(borrowerVaults, 1, (vault, callback) => {
-        this._getSpenderLimit(web3, account.address, account, vault, (err, limit) => {
-          this._getBorrow(web3, account, vault, (err, borrowAssetInfo) => {
+        this._getBorrow(web3, account, vault, (err, borrowAssetInfo) => {
+          var sendVault = {
+            address: vault,
+            borrowDecimals: borrowAssetInfo.borrowDecimals
+          }
+          this._getSpenderLimit(web3, account.address, account, sendVault, (err, limit) => {
             const newVault = {
               address: vault,
               limit: limit,
@@ -972,7 +944,7 @@ class Store {
     const account = store.getStore('account')
     const { vault, asset, amount } = payload.content
 
-    this._checkApproval(asset.reserve, account, amount, config.vaultContractAddress, (err) => {
+    this._checkApproval(asset, account, amount, config.vaultContractAddress, (err) => {
       if(err) {
         return emitter.emit(ERROR, err);
       }
@@ -1029,12 +1001,16 @@ class Store {
       })
   }
 
-  _checkApproval = async (address, account, amount, contract, callback) => {
+  _checkApproval = async (asset, account, amount, contract, callback) => {
     const web3 = new Web3(store.getStore('web3context').library.provider);
-    let erc20Contract = new web3.eth.Contract(config.erc20ABI, address)
+    let erc20Contract = new web3.eth.Contract(config.erc20ABI, asset.reserve)
     try {
       const allowance = await erc20Contract.methods.allowance(account.address, contract).call({ from: account.address })
-      const ethAllowance = web3.utils.fromWei(allowance, "ether")
+
+      let ethAllowance = web3.utils.fromWei(allowance, "ether")
+      if (asset.decimals != 18) {
+        ethAllowance = (amount*10**asset.decimals).toFixed(0);
+      }
 
       if(parseFloat(ethAllowance) < parseFloat(amount)) {
         await erc20Contract.methods.approve(contract, web3.utils.toWei(amount, "ether")).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })

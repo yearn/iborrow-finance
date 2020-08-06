@@ -12,6 +12,7 @@ import SearchIcon from '@material-ui/icons/Search';
 
 import Loader from '../loader'
 import Snackbar from '../snackbar'
+import VaultsModal from '../vaults/vaultsModal.jsx'
 
 import {
   ERROR,
@@ -30,7 +31,8 @@ import {
   GET_BORROWER_VAULTS,
   BALANCES_RETURNED,
   SET_BORROW_ASSET,
-  SET_BORROW_ASSET_RETURNED
+  SET_BORROW_ASSET_RETURNED,
+  VAULT_CHANGED
 } from '../../constants'
 
 import Store from "../../store";
@@ -52,7 +54,8 @@ const styles = theme => ({
     marginBottom: '40px',
     alignItems: 'center',
     display: 'flex',
-    justifyContent: 'space-between'
+    justifyContent: 'space-between',
+    cursor: 'pointer'
   },
   container: {
     background: colors.white,
@@ -208,6 +211,7 @@ class Borrowing extends Component {
     emitter.on(DECREASE_LIMITS_RETURNED, this.increaseLimitsReturned);
     emitter.on(BALANCES_RETURNED, this.balancesReturned);
     emitter.on(ERROR, this.errorReturned);
+    emitter.on(VAULT_CHANGED, this.vaultChanged);
   };
 
   componentWillUnmount() {
@@ -219,7 +223,12 @@ class Borrowing extends Component {
     emitter.removeListener(DECREASE_LIMITS_RETURNED, this.increaseLimitsReturned);
     emitter.removeListener(BALANCES_RETURNED, this.balancesReturned);
     emitter.removeListener(ERROR, this.errorReturned);
+    emitter.removeListener(VAULT_CHANGED, this.vaultChanged);
   };
+
+  vaultChanged = () => {
+    this.setState({ vault: store.getStore('vault') })
+  }
 
   balancesReturned = () => {
     this.setState({ assets: store.getStore('assets') })
@@ -296,6 +305,7 @@ class Borrowing extends Component {
       foundBorrower,
       manageAmount,
       manageAmountError,
+      vaultsOpen
     } = this.state
 
     var vaultAddr = null;
@@ -337,7 +347,7 @@ class Borrowing extends Component {
           </div>
           <div className={ classes.between }>
           </div>
-          <div className={ classes.addressContainer }>
+          <div className={ classes.addressContainer } onClick={ this.vaultClicked }>
             <Typography variant='h3' className={ classes.walletTitle } >Vault</Typography>
             <Typography variant='h4' className={ classes.walletAddress } >{ vaultAddr ? vaultAddr : 'Not connected' }</Typography>
             { vaultAddr != null && <div className={ classes.online }></div> }
@@ -528,9 +538,18 @@ class Borrowing extends Component {
         */}
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
+        { vaultsOpen && <VaultsModal modalOpen={true} closeModal={ this.closeVaults } /> }
       </div>
     )
   };
+
+  vaultClicked = () => {
+    this.setState({ vaultsOpen: true })
+  }
+
+  closeVaults = () => [
+    this.setState({ vaultsOpen: false })
+  ]
 
   renderSnackbar = () => {
     var {
