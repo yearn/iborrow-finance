@@ -29,7 +29,9 @@ import {
   REPAY,
   REPAY_RETURNED,
   SET_BORROW_ASSET,
-  SET_BORROW_ASSET_RETURNED
+  SET_BORROW_ASSET_RETURNED,
+  SET_MODEL,
+  SET_MODEL_RETURNED
 } from '../constants'
 
 import Web3 from 'web3';
@@ -108,6 +110,9 @@ class Store {
             break;
           case SET_BORROW_ASSET:
             this.setBorrowAsset(payload)
+            break;
+          case SET_MODEL:
+            this.setModel(payload)
             break;
           default: {
           }
@@ -839,7 +844,14 @@ class Store {
 
       callback(null, returnObj)
     } catch(ex) {
-      return callback(ex)
+      console.log(ex)
+      const vaultData = {
+        borrowAsset: borrowAsset,
+        borrowSymbol: 'N/A',
+        borrowDecimals: 0,
+        reservePriceUSD: 0
+      }
+      callback(null, vaultData)
     }
   }
 
@@ -1035,6 +1047,58 @@ class Store {
       }
       callback(error)
     }
+  }
+
+  setModel = (payload) => {
+    const account = store.getStore('account')
+    const vault = store.getStore('vault')
+
+    const { value } = payload.content
+
+    this._callSetModel(vault, value, account, (err, res) => {
+      if(err) {
+        return emitter.emit(ERROR, err);
+      }
+
+      return emitter.emit(SET_MODEL_RETURNED, res)
+    })
+  }
+
+  _callSetModel = async (vault, value, account, callback) => {
+    const web3 = new Web3(store.getStore('web3context').library.provider);
+
+    const vaultContract = new web3.eth.Contract(config.vaultContractABI, config.vaultContractAddress)
+
+    vaultContract.methods.setModel(vault.address, value).send({ from: account.address, gasPrice: web3.utils.toWei(await this._getGasPrice(), 'gwei') })
+      .on('transactionHash', function(hash){
+        console.log(hash)
+        // callback(null, hash)
+      })
+      .on('confirmation', function(confirmationNumber, receipt){
+        console.log(confirmationNumber, receipt);
+        if(confirmationNumber == 2) {
+          callback(null, receipt.transactionHash)
+        }
+      })
+      .on('receipt', function(receipt){
+        console.log(receipt);
+      })
+      .on('error', function(error) {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
+      .catch((error) => {
+        if (!error.toString().includes("-32601")) {
+          if(error.message) {
+            return callback(error.message)
+          }
+          callback(error)
+        }
+      })
   }
 
   _getGasPrice = async () => {

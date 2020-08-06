@@ -5,7 +5,10 @@ import {
   TextField,
   InputAdornment,
   Button,
-  MenuItem
+  MenuItem,
+  RadioGroup,
+  Radio,
+  FormControlLabel
 } from '@material-ui/core'
 import { colors } from '../../theme'
 import SearchIcon from '@material-ui/icons/Search';
@@ -32,7 +35,9 @@ import {
   BALANCES_RETURNED,
   SET_BORROW_ASSET,
   SET_BORROW_ASSET_RETURNED,
-  VAULT_CHANGED
+  VAULT_CHANGED,
+  SET_MODEL,
+  SET_MODEL_RETURNED
 } from '../../constants'
 
 import Store from "../../store";
@@ -187,6 +192,9 @@ const styles = theme => ({
   assetSelectBalance: {
 
   },
+  radioGroup: {
+    flex: 1
+  }
 });
 
 class Borrowing extends Component {
@@ -212,6 +220,7 @@ class Borrowing extends Component {
     emitter.on(BALANCES_RETURNED, this.balancesReturned);
     emitter.on(ERROR, this.errorReturned);
     emitter.on(VAULT_CHANGED, this.vaultChanged);
+    emitter.on(SET_MODEL_RETURNED, this.setModelReturned);
   };
 
   componentWillUnmount() {
@@ -224,7 +233,18 @@ class Borrowing extends Component {
     emitter.removeListener(BALANCES_RETURNED, this.balancesReturned);
     emitter.removeListener(ERROR, this.errorReturned);
     emitter.removeListener(VAULT_CHANGED, this.vaultChanged);
+    emitter.removeListener(SET_MODEL_RETURNED, this.setModelReturned);
   };
+
+  setModelReturned = (txHash) => {
+    dispatcher.dispatch({ type: GET_VAULTS, content: {} })
+
+    const that = this
+    setTimeout(() => {
+      const snackbarObj = { snackbarMessage: txHash, snackbarType: 'Hash' }
+      that.setState(snackbarObj)
+    })
+  }
 
   vaultChanged = () => {
     this.setState({ vault: store.getStore('vault') })
@@ -305,7 +325,8 @@ class Borrowing extends Component {
       foundBorrower,
       manageAmount,
       manageAmountError,
-      vaultsOpen
+      vaultsOpen,
+      model
     } = this.state
 
     var vaultAddr = null;
@@ -536,12 +557,38 @@ class Borrowing extends Component {
             </div>
           </div>
         */}
+        {(vaults && vaults.length > 0) &&
+          <div className={ classes.container }>
+            <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>Set vault model</Typography>
+            <div className={ classes.amountContainer }>
+              <RadioGroup aria-label="model" name="model" value={ model } onChange={ this.handleChange } className={ classes.radioGroup }>
+                <FormControlLabel value="2" control={ <Radio /> } label="Variable" />
+                <FormControlLabel value="7" control={ <Radio /> } label="Stable" />
+              </RadioGroup>
+              <div className={ classes.between }>
+              </div>
+              <Button
+                className={ classes.searchButton }
+                variant="outlined"
+                color="primary"
+                disabled={ loading }
+                onClick={ this.onSetModel }
+                >
+                <Typography className={ classes.buttonText } variant={ 'h5'} color='secondary'>Submit</Typography>
+              </Button>
+            </div>
+          </div>
+        }
         { loading && <Loader /> }
         { snackbarMessage && this.renderSnackbar() }
         { vaultsOpen && <VaultsModal modalOpen={true} closeModal={ this.closeVaults } /> }
       </div>
     )
   };
+
+  handleChange = (event) => {
+    this.setState({ model: event.target.value })
+  }
 
   vaultClicked = () => {
     this.setState({ vaultsOpen: true })
@@ -594,6 +641,25 @@ class Borrowing extends Component {
     if(!error) {
       this.setState({ loading: true })
       dispatcher.dispatch({ type: ADD_BORROWER, content: { borrower: borrower, amount: amount } })
+    }
+  }
+
+  onSetModel = () => {
+    this.setState({ modelError: false })
+    const {
+      model
+    } = this.state
+
+    let error = false
+
+    if(!model || model === "") {
+      this.setState({ modelError: 'Invalid' })
+      error = true
+    }
+
+    if(!error) {
+      this.setState({ loading: true })
+      dispatcher.dispatch({ type: SET_MODEL, content: { value: model } })
     }
   }
 
