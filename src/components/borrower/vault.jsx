@@ -204,7 +204,7 @@ class Vault extends Component {
     return (<div className={ classes.root }>
       <div className={ classes.container }>
         <Typography variant='h3' className={ `${classes.grey} ${classes.heading}` }>{ vault.address }</Typography>
-        <Typography variant='h4' className={ `${classes.heading}` }>Current borrowing limit: { vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault.limit.toFixed(2) } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
+        <Typography variant='h4' className={ `${classes.heading}` }>Current borrowing limit: { vault.borrowSymbol === '$' ? vault.borrowSymbol : '' } { vault.limit.toFixed(4) } { vault.borrowSymbol !== '$' ? vault.borrowSymbol : '' }</Typography>
         <div className={ classes.half }>
           <div className={ classes.inputSection }>
             <div className={ classes.valContainer }>
@@ -225,7 +225,7 @@ class Vault extends Component {
                 value={ amount }
                 error={ amountError }
                 onChange={ this.onChange }
-                placeholder="0.00"
+                placeholder="0.0000"
                 variant="outlined"
                 InputProps={{
                   startAdornment: (vault.borrowSymbol === '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
@@ -265,7 +265,7 @@ class Vault extends Component {
                   value={ repayAmount }
                   error={ repayAmountError }
                   onChange={ this.onChange }
-                  placeholder="0.00"
+                  placeholder="0.0000"
                   variant="outlined"
                   InputProps={{
                     startAdornment: (vault.borrowSymbol === '$' ? <InputAdornment position="end" className={ classes.inputAdornment }><Typography variant='h3' className={ '' }>{ vault.borrowSymbol }</Typography></InputAdornment> : null),
