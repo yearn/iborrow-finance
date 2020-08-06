@@ -127,6 +127,7 @@ class Store {
 
   configure = async () => {
     const account = store.getStore('account')
+
     const web3 = new Web3(store.getStore('web3context').library.provider);
 
     this._getReserves(web3, account, (err, reserves) => {
@@ -359,6 +360,7 @@ class Store {
           return emitter.emit(ERROR, err)
         }
 
+        console.log(vaultData)
         store.setStore({ vaults: vaultData, vault: (vaultData.length > 0 ? vaultData[0] : null) })
         return emitter.emit(VAULTS_RETURNED, vaults)
       })
@@ -405,7 +407,15 @@ class Store {
       callback(null, vaultData)
     } catch(ex) {
       console.log(ex)
-      return callback(ex)
+      const vaultData = {
+        address: vault,
+        symbol: 'N/A',
+        decimals: 0,
+        borrowSymbol: 'N/A',
+        borrowDecimals: 0,
+        reservePriceUSD: 0
+      }
+      callback(null, vaultData)
     }
 
   }
